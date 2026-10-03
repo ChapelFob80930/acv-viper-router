@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ACV Viper Router and International Floorplan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* One page, three views: routing diagram, 3D journey, dealer floorplan flow. */
+:root{--bg:#EDF0F2;--paper:#FFFFFF;--ink:#17222D;--muted:#566472;--line:#C3CCD4;--accent:#2563A8}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#11171D;--paper:#19222B;--ink:#E7ECF0;--muted:#9AA8B5;--line:#34414E;--accent:#7FB0E8;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#11171D;--paper:#19222B;--ink:#E7ECF0;--muted:#9AA8B5;--line:#34414E;--accent:#7FB0E8;color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;flex-direction:column}
+header{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--paper)}
+h1{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:600;font-size:clamp(20px,2.2vw,28px);margin:0;line-height:1.1}
+.sub{margin:2px 0 0;font-size:13px;color:var(--muted)}
+nav{display:flex;flex-wrap:wrap;gap:6px}
+nav a{border:1px solid var(--line);border-radius:999px;padding:7px 15px;font-weight:600;font-size:15px;color:var(--ink);text-decoration:none;background:var(--bg)}
+nav a[aria-current="page"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+nav a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+main{flex:1;min-height:0}
+iframe{display:block;width:100%;height:100%;border:0;background:var(--bg)}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>ACV Viper Router and International Floorplan</h1>
+    <p class="sub">Scan, route, and finance: from a drive-through scan to a dealer-funded cross-border sale. Synthetic demo data.</p>
+  </div>
+  <nav aria-label="Views">
+    <a href="#routing" data-v="routing">Vehicle routing</a>
+    <a href="#journey" data-v="journey">3D journey</a>
+    <a href="#finance" data-v="finance">Dealer floorplan finance</a>
+  </nav>
+</header>
+<main><iframe id="frame" title="Selected view"></iframe></main>
+<script>
+const VIEWS={routing:'routing.html',journey:'journey3d.html',finance:'finance.html'};
+function show(){
+  let v=(location.hash||'').replace('#','');if(!VIEWS[v])v='routing';
+  document.querySelectorAll('nav a').forEach(a=>{if(a.dataset.v===v)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
+  const f=document.getElementById('frame');if(f.dataset.v!==v){f.dataset.v=v;f.src=VIEWS[v]}
+}
+addEventListener('hashchange',show);show();
+</script>
+</body>
+</html>

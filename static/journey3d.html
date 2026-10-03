@@ -1,0 +1,440 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body style="margin:0">
+<title>Viper Router 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a 3D yard fills the top; a caption card, controls and progress sit underneath. */
+:root{
+  --bg:#f3f5f7; --panel:#ffffff; --ink:#10161f; --mute:#59636f; --line:#d9dfe6;
+  --accent:#0b5fff; --auto:#0f7b5f; --human:#b45f06;
+  --sky:#dfe7ef; --ground:#c3ccd6; --roadc:#46505d;
+  --display:'Archivo',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0c1118; --panel:#151b24; --ink:#e7ebf0; --mute:#93a0b0; --line:#273141;
+  --accent:#6b9bff; --auto:#3ecf9b; --human:#f0a040; --sky:#0f1620; --ground:#1a2330; --roadc:#2f3947; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1118; --panel:#151b24; --ink:#e7ebf0; --mute:#93a0b0; --line:#273141;
+  --accent:#6b9bff; --auto:#3ecf9b; --human:#f0a040; --sky:#0f1620; --ground:#1a2330; --roadc:#2f3947; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--display);padding-inline:16px;padding-block:20px 28px}
+.wrap{max-width:1100px;margin:0 auto;display:grid;gap:14px}
+h1{margin:0;font-size:clamp(20px,3.6vw,28px);font-weight:800;text-wrap:balance}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tab,.btn{font:600 14px var(--display);border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 14px;border-radius:8px;cursor:pointer}
+.tab[aria-pressed=true],.btn[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.tab:focus-visible,.btn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.spacer{flex:1}
+#view{position:relative;height:min(58vh,520px);min-height:300px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--sky);touch-action:none}
+#view canvas{display:block;width:100%;height:100%}
+.hud{position:absolute;left:12px;top:12px;display:flex;gap:8px;align-items:center;font:500 12px var(--mono);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 12px}
+.hud b{color:var(--accent)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:6px}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+h2{margin:0;font-size:21px;font-weight:800;text-wrap:balance}
+p{margin:0;max-width:70ch}
+.tag{justify-self:start;font:600 12px var(--mono);padding:4px 10px;border-radius:999px;color:var(--auto);border:1px solid var(--auto)}
+.tag.human{color:var(--human);border-color:var(--human)}
+.dots{display:flex;gap:6px;flex-wrap:wrap}
+.dot{font:500 11px var(--mono);padding:3px 8px;border-radius:6px;border:1px solid var(--line);color:var(--mute);background:var(--panel);cursor:pointer}
+.dot.on{background:var(--accent);border-color:var(--accent);color:#fff}.dot.past{border-color:var(--auto);color:var(--auto)}
+.foot{font-size:12px;color:var(--mute)}
+label.chk{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--mute)}
+</style>
+
+<div class="wrap">
+  <h1>Viper Router in 3D: one car, from scan to dealer floorplan</h1>
+  <div class="bar" role="group" aria-label="Controls">
+    <button class="tab" data-v="camry" aria-pressed="true">2020 Camry · clean</button>
+    <button class="tab" data-v="f150" aria-pressed="false">2017 F-150 · frame damage → dealer floorplan export</button>
+    <button class="tab" data-v="rogue" aria-pressed="false">2018 Rogue · low confidence</button>
+    <span class="spacer"></span>
+    <label class="chk"><input type="checkbox" id="cycle" checked> Cycle vehicles</label>
+    <button class="btn" id="view-mode" aria-pressed="false">Overview</button>
+    <button class="btn" id="play" aria-pressed="true">Pause</button>
+    <button class="btn" id="prev">Back</button>
+    <button class="btn primary" id="next">Next stage</button>
+  </div>
+  <div id="view"><div class="hud">STAGE <b id="hudstep">1/9</b><span id="hudname">Entrance</span></div></div>
+  <div class="card" id="cap"></div>
+  <div class="dots" id="dots"></div>
+  <div class="foot">Drag to rotate, scroll to zoom. Left and right arrow keys change stage. Cars bound for Copart's export route continue into the dealer floorplan corridor; the others skip it. All prices, fees, rules and financing terms are illustrative placeholders from synthetic demo data.</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const T=THREE, $=s=>document.querySelector(s), fmt=n=>'$'+Math.round(n).toLocaleString();
+/* station index = position in this list; each vehicle visits only some of them */
+const STEPS=['Entrance: VIN read','Viper scan','LLM structures records','Rules gates','Route model','Confidence check','LLM explains decision','Route chosen','Import eligibility','Landed cost','Local resale value','LLM reads dealer documents','Dealer credit line','Dealer risk model','Vehicle risk model','Transaction decision','ACV Capital funds','Transport + import','Dealer inventory + sale','Floorplan repaid','Learning loop'];
+const FP={"dealer": {"name": "Toronto Auto Group", "country": "Canada", "pd": 2.8, "band": "Low", "line": 650000, "util": 410000, "avail": 240000, "status": "APPROVED", "pos": ["Inventory turnover (days)", "Average bank balance", "Prior delinquencies"], "neg": ["Average days to repay", "Historical utilization", "ACV purchase history"]}, "veh": {"label": "2017 Ford F-150", "title": "Rebuilt / branded", "price": 9780, "transport": 1200, "imp": 1249, "landed": 12229, "resale": 15726, "margin": 3497, "days": 74, "recovery": 10724, "band": "Medium", "liq": 33, "elig": {"Canada": "MANUAL REVIEW", "Mexico": "MANUAL REVIEW"}, "reasons": ["Rebuilt / branded title"]}, "tx": {"decision": "MANUAL REVIEW", "reasons": ["Rebuilt / branded title", "Recovery value below exposure", "Expected time-to-sale above policy"], "funds": 11008, "dealer": 1221, "ltv": 70.0, "adv": 70}};//FP
+const CONF_T=55;
+const RL={retain:'Retain & service',acv:'ACV auction',copart:'Copart'}, RC={retain:0x7a4cff,acv:0x2f6bff,copart:0xe8590c};
+const D={
+ camry:{name:'2020 Toyota Camry',kind:'sedan',color:0xb7c4d6,route:'acv',review:false,fails:[0,0,0,0,0],conf:59.4,
+  nets:{retain:10161,acv:11694,copart:4758},margin:13.1,
+  why:'Low scan damage and a steady oil-change record keep the auction value high. Local retail demand is soft, which hurts the retain option.',
+  scan:'2 dents · 0 broken parts · brakes 7.5 mm · oil good · engine 90',hist:'Tier 3 · 72 months · 11 events parsed · oil change about every 6,000 mi'},
+ f150:{name:'2017 Ford F-150',kind:'truck',color:0xb3261e,route:'copart',review:false,fails:[1,0,0,0,0],dest:'Canada',
+  nets:null,margin:null,conf:null,
+  why:'Frame damage fails a hard rule, so the model is skipped. Frame-damaged cars can be resold in the US with a branded title, but sending them straight to salvage avoids a failed auction cycle.',
+  scan:'11 dents · 3 broken parts · brakes 3.5 mm · oil fair · engine 62',hist:'Tier 2 · 36 months · 6 events parsed · 2 collision events · bent rail noted'},
+ rogue:{name:'2018 Nissan Rogue',kind:'suv',color:0xe08a2e,route:'retain',review:true,fails:[0,0,0,0,0],conf:52.8,
+  nets:{retain:4852,acv:4587,copart:3955},margin:5.5,
+  why:'Retain and ACV are $265 apart and the model is not sure which side of the line this car falls on. A specialist validates the call.',
+  scan:'4 dents · 1 broken part · brakes 4.0 mm · oil fair · engine 78',hist:'Tier 2 · 36 months · 5 events parsed · rear brakes replaced twice'}
+};
+const VISIT={copart:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],other:[0,1,2,3,4,5,6,7,20]};
+const visited=k=>D[k].route==='copart'?VISIT.copart:VISIT.other;
+function captions(k){const d=D[k],skip=!!d.fails.some(x=>x);const mx='Mexico';return[
+ ['Dealer drives the car through the entrance','The VIN is read at the entrance arch. That alone starts the whole process: nobody types data or presses a button.','AUTOMATIC · triggered by the scan'],
+ ['Viper pillars scan the car','Pillars detect dents and broken parts, and check engine, brakes and oil. '+d.scan+'.','AUTOMATIC · no manual inspection'],
+ ['The LLM turns messy service records into structured data','Service history is fetched by VIN as unstructured text. The LLM reads it and outputs structured events (date, mileage, part, action), from which the system builds features such as oil-change interval, longest service gap and repeat repairs. '+d.hist+'.','AUTOMATIC · LLM parsing → structured events → features'],
+ ['Layer 1: hard gates',skip?'Gate failed: frame / structural damage. The barrier stays down, the model is skipped and the car is rerouted to the salvage path.':'Frame, flood, salvage title, airbag and odometer checks all pass. The barrier lifts.','AUTOMATIC · rules engine'],
+ ['Layer 2: the model prices every route',skip?'Skipped for this car because a rule already decided.':'Bars show the predicted net value of each route. The tallest bar wins, and SHAP explains what drove it.','AUTOMATIC · '+(skip?'skipped by gate':'LightGBM + SHAP')],
+ [d.review?'Confidence check: too low, so a human validates':'Confidence check: confident enough',skip?'Not needed, a rule decided.':d.review?'Model confidence is '+d.conf+'%, below the '+CONF_T+'% threshold, and the top two routes are only '+d.margin+'% apart. The car goes to a condition specialist for validation, and the specialist\'s decision becomes training data.':'Model confidence is '+d.conf+'%, above the '+CONF_T+'% threshold, and the top route leads by '+d.margin+'%. No person is needed.',d.review?'HUMAN VALIDATION · low model confidence':'AUTOMATIC · '+(skip?'rule override':'confidence above threshold')],
+ ['Layer 3: the LLM explains it to the dealer',d.why,'AUTOMATIC · explains, never decides'],
+ ['Route: '+RL[d.route],d.route==='retain'?'The dealer reconditions and retails the car on their own lot.':d.route==='acv'?'The car is listed on the ACV wholesale auction automatically.':'ACV and Copart are one group, so this is an internal hand-off and the fee stays in-house. The export route now continues into ACV Capital floorplan financing for a Canadian dealer.','AUTOMATIC · listing created for you'],
+ ['Import eligibility engine','Deterministic rules, not ML, decide whether this vehicle can be imported. Canada checks RIV admissibility, recalls, compliance and title status. Mexico checks model year, VIN origin, import route, title and theft status. The rebuilt-title truck is not rejected: it goes to manual review in both countries.','AUTOMATIC · rules engine'],
+ ['Landed cost engine','Purchase price + transport + import costs (duty, tax, compliance) = landed cost: '+cad(FP.veh.landed)+' for this truck (illustrative).','AUTOMATIC · rules engine'],
+ ['Local resale value prediction','A gradient-boosted vehicle model predicts what the truck will resell for in Canada: '+cad(FP.veh.resale)+'. Legal eligibility and economics are separate checks, and this one clears with an expected margin of '+cad(FP.veh.margin)+'.','AUTOMATIC · machine learning'],
+ ['The LLM reads the dealer\'s documents','Toronto Auto Group uploads its income statement, balance sheet, bank statements, registration and owner guarantee. The LLM extracts revenue, EBITDA, cash, sales and debt into structured data, compares documents for consistency, and writes an underwriter summary. It is only a summary: rules and ML make the credit decision.','AUTOMATIC · LLM / document AI'],
+ ['Dealer credit line','The dealer, not a consumer, is the borrower. A revolving inventory line is recommended from revenue, cash flow, inventory turnover, repayment history, existing debt and the dealer\'s risk, and it is capped rather than maximized: '+cad(FP.dealer.line)+' with '+cad(FP.dealer.util)+' used and '+cad(FP.dealer.avail)+' available.','AUTOMATIC · rules + ML'],
+ ['Dealer risk model','A gradient-boosted decision tree model predicts the probability the dealer defaults: '+FP.dealer.pd+'% (risk band '+FP.dealer.band+'). SHAP shows what lowered and raised the risk, so the score is explainable and auditable.','AUTOMATIC · machine learning'],
+ ['Vehicle risk model','Is this specific truck good collateral? The model estimates resale '+cad(FP.veh.resale)+', recovery value '+cad(FP.veh.recovery)+' and about '+FP.veh.days+' days to sell. The branded title and slow sale put vehicle risk at '+FP.veh.band+'.','AUTOMATIC · machine learning'],
+ ['Transaction risk engine and decision','Dealer risk, vehicle risk, credit-line room, import status and landed economics combine into APPROVE, MANUAL REVIEW or DECLINE. Here the rebuilt title, recovery value below exposure and a slow expected sale trigger manual review, so a human underwriter validates and approves at a lower '+FP.tx.adv+'% advance rate.','HUMAN VALIDATION · branded-title exception'],
+ ['ACV Capital funds the vehicle','Using the existing floorplan model, ACV Capital funds '+cad(FP.tx.funds)+' ('+FP.tx.adv+'% advance, LTV '+FP.tx.ltv+'%). The dealer contributes '+cad(FP.tx.dealer)+'. Available credit drops by the amount funded.','AUTOMATIC · funding released'],
+ ['Transport and import','The truck loads onto a car carrier, crosses the border into Canada and clears import with the paperwork the rules engine already prepared.','AUTOMATIC · transport + import'],
+ ['Dealer inventory and sale','The truck lands in Toronto Auto Group\'s inventory and the dealer sells it to a retail buyer.','AUTOMATIC · tracked by VIN'],
+ ['Floorplan repaid','The dealer repays ACV Capital when the truck sells, restoring available credit. Days to repay and the final sale price are recorded.','AUTOMATIC · repayment tracked'],
+ ['Learning loop','Sale prices, repayment behaviour, recovery results and every human decision flow back. The dealer, vehicle and routing models retrain on a schedule, and a new version replaces the old one only if it scores better on held-out data.','AUTOMATIC · scheduled retrain']
+];}
+
+/* ---------- scene ---------- */
+const view=$('#view'), scene=new T.Scene();
+const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;
+view.appendChild(renderer.domElement);
+const camera=new T.PerspectiveCamera(48,1,.1,700);
+function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+let groundMesh, roadMat;
+function applyTheme(){const sky=new T.Color(cssVar('--sky')||'#dfe7ef');scene.background=sky;scene.fog=new T.Fog(sky,120,460);
+  if(groundMesh)groundMesh.material.color.set(cssVar('--ground'));if(roadMat)roadMat.color.set(cssVar('--roadc'));}
+scene.add(new T.HemisphereLight(0xffffff,0x556070,.85));
+const sun=new T.DirectionalLight(0xffffff,.9);sun.position.set(170,100,40);sun.castShadow=true;sun.shadow.mapSize.set(4096,4096);
+Object.assign(sun.shadow.camera,{left:-260,right:260,top:110,bottom:-110,near:1,far:420});scene.add(sun);scene.add(sun.target);sun.target.position.set(190,0,0);
+
+function mat(c,o){return new T.MeshStandardMaterial(Object.assign({color:c,roughness:.65,metalness:.1},o||{}))}
+function box(w,h,d,c,o){const m=new T.Mesh(new T.BoxGeometry(w,h,d),mat(c,o));m.castShadow=m.receiveShadow=true;return m}
+function put(m,x,y,z,p){m.position.set(x,y,z);(p||scene).add(m);return m}
+function labelSprite(text,w,h,color){const c=document.createElement('canvas');c.width=512;c.height=128;const tex=new T.CanvasTexture(c);
+  const s=new T.Sprite(new T.SpriteMaterial({map:tex,transparent:true,depthTest:false}));s.scale.set(w,h,1);
+  s.set=(t,col)=>{const g=c.getContext('2d');g.clearRect(0,0,512,128);g.fillStyle='rgba(16,22,31,.82)';g.beginPath();g.roundRect?g.roundRect(8,24,496,80,16):g.rect(8,24,496,80);g.fill();
+    let fs=44;g.font='600 '+fs+'px system-ui,sans-serif';const mw=g.measureText(t).width;if(mw>460){fs=Math.floor(44*460/mw);g.font='600 '+fs+'px system-ui,sans-serif'}
+    g.fillStyle=col||'#fff';g.textAlign='center';g.textBaseline='middle';g.fillText(t,256,66);tex.needsUpdate=true};
+  s.set(text,color);return s}
+function glow(m,on,col){m.material.emissive=new T.Color(on?col:0x000000);m.material.emissiveIntensity=on?.9:0}
+function wrapText(c,text,x,y,maxW,lh){const words=text.split(' ');let line='';words.forEach(w=>{if(c.measureText(line+w).width>maxW){c.fillText(line,x,y);y+=lh;line=''}line+=w+' '});c.fillText(line,x,y);return y}
+function screenPanel(g,y,drawFn,speed){const cv=document.createElement('canvas');cv.width=512;cv.height=288;const tex=new T.CanvasTexture(cv);
+  put(new T.Mesh(new T.PlaneGeometry(7,3.9),new T.MeshBasicMaterial({map:tex})),0,y,0,g);put(box(7.3,4.2,.2,0x1b2430),0,y,-.12,g);put(box(.4,y-2,.4,0x39434f),0,(y-2)/2,-.2,g);
+  let prog=0,last=-1;const paint=()=>{drawFn(cv.getContext('2d'),prog);tex.needsUpdate=true};
+  return {reset(){prog=0;last=-1;paint()},tick(on,done,dt){prog=on?Math.min(1,prog+dt*speed):done?1:prog;const q=Math.round(prog*40);if(q!==last){last=q;paint()}}}}
+function rr(c,x,y,w,h,r){c.beginPath();c.roundRect?c.roundRect(x,y,w,h,r):c.rect(x,y,w,h)}
+
+groundMesh=new T.Mesh(new T.PlaneGeometry(900,320),mat(0xcccccc,{roughness:1}));groundMesh.rotation.x=-Math.PI/2;groundMesh.position.set(160,-.02,0);groundMesh.receiveShadow=true;scene.add(groundMesh);
+roadMat=mat(0x46505d,{roughness:.9});
+function road(a,b,w){const dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz);const m=new T.Mesh(new T.BoxGeometry(len,.1,w),roadMat);m.receiveShadow=true;
+  m.position.set((a[0]+b[0])/2,.03,(a[1]+b[1])/2);m.rotation.y=-Math.atan2(dz,dx);scene.add(m);
+  const dash=new T.Mesh(new T.BoxGeometry(len,.02,.12),mat(0xe8e8e8,{roughness:1}));dash.position.copy(m.position);dash.position.y=.1;dash.rotation.y=m.rotation.y;scene.add(dash)}
+road([-22,0],[96,0],6.4);road([96,0],[108,-14],5);road([108,-14],[124,-14],5);road([96,0],[124,0],6);road([96,0],[108,14],5);road([108,14],[400,14],5);
+
+const S=[]; // station objects, indexed like STEPS
+function arch(x,color,w,z0){z0=z0||0;const g=new T.Group();put(box(.6,5,.6,0x7d8896),0,2.5,-w/2,g);put(box(.6,5,.6,0x7d8896),0,2.5,w/2,g);
+  const top=put(box(.8,.7,w+.6,color),0,5.2,0,g);g.position.set(x,0,z0);scene.add(g);return {g,top}}
+const SIDE_Z=23;
+function side(x){const g=new T.Group();g.position.set(x,0,SIDE_Z);scene.add(g);return g}
+
+// 0 entrance arch
+{const a=arch(0,0x2f6bff,7);put(labelSprite('Entrance: VIN read',8,2,'#fff'),0,7.4,0,a.g);
+ S[0]={tick(t,dt,on,done){glow(a.top,on||done,0x2f6bff)}}}
+// 1 Viper pillars
+{const g=new T.Group();g.position.set(12,0,0);scene.add(g);const tops=[];
+ [[-1.6,-3.8],[1.6,-3.8],[-1.6,3.8],[1.6,3.8]].forEach(p=>{put(box(.7,4.6,.7,0x39434f),p[0],2.3,p[1],g);tops.push(put(box(.8,.5,.8,0x00c2d9),p[0],4.8,p[1],g))});
+ const beam=new T.Mesh(new T.BoxGeometry(.08,4.4,7.6),new T.MeshBasicMaterial({color:0x19e0ff,transparent:true,opacity:0}));beam.position.set(0,2.4,0);g.add(beam);
+ const scan2=new T.Mesh(new T.BoxGeometry(3.4,.08,7.6),new T.MeshBasicMaterial({color:0x19e0ff,transparent:true,opacity:0}));g.add(scan2);
+ put(labelSprite('Viper scan',8,2,'#fff'),0,7.2,0,g);
+ S[1]={tick(t,dt,on,done){tops.forEach(m=>glow(m,on||done,0x00c2d9));beam.position.x=Math.sin(t*3)*1.6;scan2.position.y=2.4+Math.sin(t*3.4)*2;
+   beam.material.opacity=on?.35:0;scan2.material.opacity=on?.28:0}}}
+// 2 data tower: messy records orbit, the LLM turns them into a structured table
+const ROWS={camry:[['2021-02','12,300','oil','service'],['2022-09','31,000','brakes','replace'],['2024-11','55,000','battery','replace'],['2026-05','71,300','oil','service']],
+ f150:[['2023-11','96,400','oil','service'],['2024-03','101,000','brakes','replace'],['2024-06','104,900','body','repair'],['2025-08','113,000','suspension','replace']],
+ rogue:[['2023-12','82,000','oil','service'],['2024-04','86,000','brakes','replace'],['2024-09','89,500','body','repair'],['2025-11','94,000','brakes','replace']]};
+{const g=side(26);g.position.z=9;const tower=put(box(2.6,6,2.6,0x425064),0,3,0,g);const cards=new T.Group();cards.position.y=3.5;g.add(cards);
+ for(let i=0;i<8;i++){const c=new T.Mesh(new T.PlaneGeometry(1.1,1.4),new T.MeshBasicMaterial({color:i%2?0xffd166:0xffffff,side:T.DoubleSide}));const a=i/8*Math.PI*2;c.position.set(Math.cos(a)*3.2,Math.sin(i)*.6,Math.sin(a)*3.2);c.lookAt(0,c.position.y,0);c.userData.a=a;cards.add(c)}
+ put(labelSprite('LLM structures records',9,2.2,'#fff'),0,8.6,0,g);
+ const cv=document.createElement('canvas');cv.width=640;cv.height=340;const tex=new T.CanvasTexture(cv);
+ const tbl=new T.Mesh(new T.PlaneGeometry(8,4.25),new T.MeshBasicMaterial({map:tex,transparent:true,opacity:0,side:T.DoubleSide}));tbl.position.set(0,5.2,4.8);g.add(tbl);
+ function drawTable(){const c=cv.getContext('2d');c.fillStyle='#0f1620';c.fillRect(0,0,640,340);c.fillStyle='#3ecf9b';c.font='600 22px monospace';c.fillText('STRUCTURED EVENTS  →  features',20,34);
+  const cx=[20,150,300,470];c.fillStyle='#93a0b0';c.font='600 22px monospace';['date','mileage','part','action'].forEach((h,i)=>c.fillText(h,cx[i],80));
+  c.fillStyle='#e7ebf0';c.font='24px monospace';ROWS[vk].forEach((r,j)=>r.forEach((v,i)=>c.fillText(v,cx[i],124+j*44)));
+  c.fillStyle='#ffd166';c.font='600 20px monospace';c.fillText('oil interval · longest gap · repeat repairs',20,318);tex.needsUpdate=true}
+ const raw=labelSprite('messy text in',6,1.6,'#ffd166');raw.position.set(0,6.6,-3.4);g.add(raw);
+ let p=0,rot=0;
+ S[2]={g,link:true,reset(){p=0;drawTable()},tick(t,dt,on,done){glow(tower,on||done,0x7a4cff);p+=(((on||done)?1:0)-p)*Math.min(1,dt*(on?.9:3));
+   rot+=dt*(on?2.4:.4)*(1-p*.8);cards.rotation.y=rot;raw.visible=p<.4;tbl.material.opacity=Math.max(0,Math.min(1,(p-.35)/.4));tbl.visible=p>.36;tbl.lookAt(camera.position);
+   cards.children.forEach((c,i)=>{const a=c.userData.a,r=3.2-(on&&p<.2?1.2*((Math.sin(t*2+i)+1)/2):0)-p*2.2;
+     c.position.set(Math.cos(a)*r,Math.sin(i)*.6*(1-p),Math.sin(a)*r);c.scale.setScalar(Math.max(.01,1-p*.95))})}}}
+// 3 rules gate
+{const a=arch(40,0x39434f,7);const lights=[];for(let i=0;i<5;i++)lights.push(put(new T.Mesh(new T.SphereGeometry(.34,16,12),mat(0x444444)),0,5.2,-2.6+i*1.3,a.g));
+ const arm=new T.Group();arm.position.set(0,1.6,-3.2);a.g.add(arm);put(box(.3,.3,6.4,0xe8590c),0,0,3.2,arm);
+ put(labelSprite('Rules gates',8,2,'#fff'),0,7.4,0,a.g);let angle=0;
+ S[3]={tick(t,dt,on,done){const fail=D[vk].fails.some(x=>x);const open=!(fail&&(on||done));const target=open?-1.25:0;angle+=(target-angle)*Math.min(1,dt*4);arm.rotation.x=angle;
+   lights.forEach((l,i)=>{const lit=on||done;const bad=D[vk].fails[i];l.material.color.set(!lit?0x444444:bad?0xff3b30:0x30d158);l.material.emissive=new T.Color(!lit?0:bad?0xff3b30:0x30d158);l.material.emissiveIntensity=lit?1:0})}}}
+// 4 model core
+{const g=new T.Group();g.position.set(54,0,9);scene.add(g);put(box(7,.4,5,0x39434f),0,.2,0,g);
+ const core=new T.Mesh(new T.IcosahedronGeometry(1.2,1),mat(0x7a4cff,{roughness:.3}));core.position.y=7.5;core.castShadow=true;g.add(core);
+ const keys=['retain','acv','copart'],bars={},txt={};
+ keys.forEach((k,i)=>{const b=box(1.4,1,1.4,RC[k]);b.position.set(-2+i*2,.4,0);b.scale.y=.01;g.add(b);bars[k]=b;const l=labelSprite('',4,1,'#fff');l.position.set(-2+i*2,0,0);g.add(l);txt[k]=l});
+ put(labelSprite('Route model',8,2,'#fff'),0,9.6,0,g);let hs={retain:0,acv:0,copart:0};
+ S[4]={g,link:true,reset(){keys.forEach(k=>{hs[k]=0;bars[k].scale.y=.01;txt[k].visible=false})},
+  tick(t,dt,on,done){core.rotation.y+=dt*(on?3:.6);core.rotation.x+=dt*.4;glow(core,on||done,0x7a4cff);const n=D[vk].nets;
+   keys.forEach(k=>{let h=.01;if(n&&(on||done)){const mx=Math.max(...Object.values(n));h=Math.max(.2,n[k]/mx*5)}
+     hs[k]+=(h-hs[k])*Math.min(1,dt*3);bars[k].scale.y=Math.max(.01,hs[k]);bars[k].position.y=hs[k]/2+.4;
+     const win=n&&k===D[vk].route&&(on||done);glow(bars[k],!!win,RC[k]);bars[k].material.color.set(n||!(on||done)?RC[k]:0x777777);
+     txt[k].visible=!!(n&&(on||done));txt[k].position.y=hs[k]+1.3;if(n)txt[k].set(RL[k].split(' ')[0]+' '+fmt(n[k]),win?'#ffe08a':'#fff')})}}}
+// 5 confidence check + human validation booth
+{const g=new T.Group();g.position.set(68,0,9);scene.add(g);
+ const hut=put(box(4,3,3,0x5a6575),3,1.5,0,g);const roof=put(box(4.4,.4,3.4,0x39434f),3,3.2,0,g);
+ const head=put(new T.Mesh(new T.SphereGeometry(.45,16,12),mat(0xf0c8a0)),3,4.1,0,g);const body=put(new T.Mesh(new T.CylinderGeometry(.35,.5,1.1,12),mat(0xf0a040)),3,3.4,0,g);
+ put(box(1.4,6.2,1.4,0x2b3543,{transparent:true,opacity:.55}),-3,3.1,0,g);
+ const fill=put(box(1.1,1,1.1,0x30d158),-3,.5,0,g);fill.scale.y=.01;
+ const mark=put(box(2.2,.14,2.2,0xffd60a,{emissive:0xffd60a,emissiveIntensity:.9}),-3,CONF_T/100*6,0,g);
+ const markLab=labelSprite('threshold '+CONF_T+'%',4.2,1,'#ffd60a');put(markLab,-3,CONF_T/100*6+.9,0,g);
+ const valLab=labelSprite('',5.4,1.1,'#fff');put(valLab,-3,7.6,0,g);
+ const l=labelSprite('Confidence check',8,2,'#fff');put(l,0,10,0,g);let h=0;
+ S[5]={g,link:true,reset(){h=0;fill.scale.y=.01;valLab.visible=false},
+  tick(t,dt,on,done){const d=D[vk],c=d.conf;const lit=(on||done)&&c!=null;h+=(((lit?c/100*6:0.01))-h)*Math.min(1,dt*2);fill.scale.y=Math.max(.01,h);fill.position.y=h/2+.1;
+   const low=c!=null&&c<CONF_T;fill.material.color.set(low?0xffb020:0x30d158);glow(fill,lit,low?0xffb020:0x30d158);valLab.visible=lit;
+   if(lit)valLab.set(c+'%  '+(low?'< '+CONF_T+'% → human':'≥ '+CONF_T+'% → auto'),low?'#ffd27a':'#9be7c4');
+   const rev=!!d.review;head.visible=body.visible=rev;head.position.y=4.15+Math.sin(t*4)*(rev&&on?.12:0);glow(roof,rev&&on,0xf0a040);
+   l.set(rev&&on?'Human validates':'Confidence check',rev&&on?'#ffd27a':'#fff')}}}
+// 6 LLM explanation screen
+{const g=side(82);g.position.z=9;
+ const scr=screenPanel(g,5,(c,p)=>{c.fillStyle='#0f1620';c.fillRect(0,0,512,288);c.fillStyle='#6b9bff';c.font='600 22px monospace';c.fillText('LLM explains · never decides',20,34);
+  c.fillStyle='#e7ebf0';c.font='22px system-ui,sans-serif';const w=D[vk].why;wrapText(c,w.slice(0,Math.floor(w.length*p)),20,76,470,30)},.35);
+ put(labelSprite('LLM explains decision',9,2.2,'#fff'),0,8,0,g);
+ S[6]={g,link:true,reset(){scr.reset()},tick(t,dt,on,done){scr.tick(on,done,dt)}}}
+// 7 route split signs + destinations
+const signs={};
+{const g=new T.Group();g.position.set(96,0,0);scene.add(g);
+ [['retain',-6],['acv',0],['copart',6]].forEach(([k,z])=>{put(box(.4,3,.4,0x39434f),0,1.5,z*1.1,g);signs[k]=put(box(.5,1.1,2.4,RC[k]),0,3.4,z*1.1,g)});
+ put(labelSprite('Route chosen',8,2,'#fff'),0,6.6,0,g);
+ S[7]={tick(t,dt,on,done){Object.keys(signs).forEach(k=>glow(signs[k],(on||done)&&k===D[vk].route,RC[k]))}}}
+{ const g=new T.Group();g.position.set(124,0,-14);scene.add(g);put(box(8,4,7,0x7a4cff),6,2,0,g);put(box(8.4,.5,7.4,0x4b2a9a),6,4.2,0,g);put(labelSprite('Dealer lot',7,1.8,'#fff'),6,7,0,g);
+ const h=new T.Group();h.position.set(124,0,0);scene.add(h);put(box(12,5,9,0x2f6bff),8,2.5,0,h);put(box(12.4,.6,9.4,0x1a3d99),8,5.2,0,h);put(labelSprite('ACV auction',7,1.8,'#fff'),8,8,0,h);
+ const y=new T.Group();y.position.set(124,0,14);scene.add(y);put(labelSprite('Copart yard',7,1.8,'#fff'),4,6,0,y);
+ for(let i=0;i<6;i++){put(box(3.6,1.1,1.7,[0x6b7280,0x9ca3af,0x4b5563][i%3]),1+(i%3)*4.2,.6,-5.5+Math.floor(i/3)*10.5,y)} }
+
+/* ---------- cross-border dealer floorplan corridor (Copart / export route only) ---------- */
+const cad=n=>'CAD '+Math.round(n).toLocaleString();
+const ELIG_COL={'ELIGIBLE':0x30d158,'MANUAL REVIEW':0xffb020,'INELIGIBLE':0xff3b30,'ELIGIBLE BUT NOT ECONOMIC':0xffb020};
+// 8 import eligibility (rules)
+{const a=arch(142,0x2563a8,7,14);put(labelSprite('Import eligibility',8,2,'#fff'),0,8.8,0,a.g);
+ const cs=put(box(.6,1.2,3.2,0x555555),0,6.5,-2,a.g),ms=put(box(.6,1.2,3.2,0x555555),0,6.5,2,a.g);
+ const cl=labelSprite('Canada',4.4,1.1,'#fff'),ml=labelSprite('Mexico',4.4,1.1,'#fff');put(cl,0,7.8,-2,a.g);put(ml,0,7.8,2,a.g);
+ const short=s=>s==='MANUAL REVIEW'?'review':s==='ELIGIBLE'?'eligible':s==='INELIGIBLE'?'ineligible':'not economic';
+ S[8]={tick(t,dt,on,done){const lit=on||done,e=FP.veh.elig;
+   [[cs,cl,'Canada',e.Canada],[ms,ml,'Mexico',e.Mexico]].forEach(([b,lab,n,st])=>{const col=ELIG_COL[st];b.material.color.set(lit?col:0x555555);glow(b,lit,col);lab.set(lit?n+': '+short(st):n,lit?'#fff':'#fff')})}}}
+// 9 landed cost (rules)
+{const g=side(160);const scr=screenPanel(g,5,(c,p)=>{c.fillStyle='#0f1620';c.fillRect(0,0,512,288);c.fillStyle='#7fb0e8';c.font='600 21px monospace';c.fillText('LANDED COST ENGINE · CAD',20,32);
+  const v=FP.veh,rows=[['ACV price',v.price],['+ Transport',v.transport],['+ Import, tax, compliance',v.imp],['= Landed cost',v.landed]];const n=Math.ceil(p*4.2);
+  rows.slice(0,n).forEach((r,i)=>{const last=i===3;c.fillStyle=last?'#3ecf9b':'#e7ebf0';c.font=(last?'600 ':'')+'26px system-ui,sans-serif';c.textAlign='left';c.fillText(r[0],24,92+i*52);c.textAlign='right';c.fillText(Math.round(r[1]).toLocaleString(),488,92+i*52)});c.textAlign='left';
+  c.fillStyle='#93a0b0';c.font='17px system-ui,sans-serif';c.fillText('Rules compute it. Illustrative duty, tax and costs.',20,270)},.3);
+ put(labelSprite('Landed cost engine',8,2,'#fff'),0,8.2,0,g);S[9]={g,link:true,reset(){scr.reset()},tick(t,dt,on,done){scr.tick(on,done,dt)}}}
+// 10 local resale value (ML)
+{const g=side(178);const scr=screenPanel(g,5,(c,p)=>{c.fillStyle='#0f1620';c.fillRect(0,0,512,288);c.fillStyle='#b99ae6';c.font='600 21px monospace';c.fillText('VEHICLE MODEL · local resale · CAD',20,32);
+  const v=FP.veh,rows=[['Landed cost',v.landed,'#e7ebf0'],['Predicted resale',v.resale,'#e7ebf0'],['Expected margin',v.margin,v.margin>0?'#3ecf9b':'#ff9a94']];const n=Math.ceil(p*3.3);
+  rows.slice(0,n).forEach((r,i)=>{c.fillStyle=r[2];c.font=(i===2?'600 ':'')+'27px system-ui,sans-serif';c.textAlign='left';c.fillText(r[0],24,100+i*54);c.textAlign='right';c.fillText(Math.round(r[1]).toLocaleString(),488,100+i*54)});c.textAlign='left';
+  if(p>.85){c.fillStyle='#3ecf9b';c.font='600 22px system-ui,sans-serif';c.fillText(v.margin>0?'ECONOMICALLY ATTRACTIVE':'NOT ECONOMIC',24,270)}},.3);
+ put(labelSprite('Local resale value',8,2,'#fff'),0,8.2,0,g);S[10]={g,link:true,reset(){scr.reset()},tick(t,dt,on,done){scr.tick(on,done,dt)}}}
+// 11 LLM reads dealer documents
+{const g=side(196);const cards=new T.Group();cards.position.y=3.2;g.add(cards);
+ for(let i=0;i<6;i++){const c=new T.Mesh(new T.PlaneGeometry(1,1.3),new T.MeshBasicMaterial({color:i%2?0xffd166:0xffffff,side:T.DoubleSide}));const a=i/6*Math.PI*2;c.position.set(Math.cos(a)*3.6,Math.sin(i)*.5,Math.sin(a)*3.6);c.lookAt(0,c.position.y,0);cards.add(c)}
+ const scr=screenPanel(g,6.2,(c,p)=>{c.fillStyle='#0f1620';c.fillRect(0,0,512,288);c.fillStyle='#f0b43c';c.font='600 20px monospace';c.fillText('LLM · dealer documents → structured data',16,30);
+  const rows=[['Revenue','CAD 4.2M'],['EBITDA','CAD 410K'],['Average cash','CAD 185K'],['Monthly sales','47 vehicles'],['Existing debt','CAD 620K']];const n=Math.ceil(p*5.3);c.font='23px system-ui,sans-serif';
+  rows.slice(0,n).forEach((r,i)=>{c.fillStyle='#93a0b0';c.textAlign='left';c.fillText(r[0],24,70+i*34);c.fillStyle='#e7ebf0';c.textAlign='right';c.fillText(r[1],488,70+i*34)});c.textAlign='left';
+  if(p>.8){c.fillStyle='#ffd166';c.font='17px system-ui,sans-serif';wrapText(c,'Summary: stable revenue and strong turnover. Main risk is elevated existing debt.',24,252,470,21)}},.26);
+ put(labelSprite('LLM reads dealer documents',9.4,2.2,'#fff'),0,9.6,0,g);
+ put(labelSprite('summary only · rules + ML decide',8,1.4,'#f0b43c'),0,.2,3.2,g);
+ let rot=0;S[11]={g,link:true,reset(){scr.reset()},tick(t,dt,on,done){scr.tick(on,done,dt);rot+=dt*(on?2:.4);cards.rotation.y=rot}}}
+// 12 dealer credit line
+{const g=side(214);const scr=screenPanel(g,5,(c,p)=>{const d=FP.dealer;c.fillStyle='#0f1620';c.fillRect(0,0,512,288);c.fillStyle='#e7ebf0';c.font='600 25px system-ui,sans-serif';c.fillText(d.name,20,40);
+  c.fillStyle='#93a0b0';c.font='17px monospace';c.fillText('DEALER CREDIT LINE · '+d.country,20,64);
+  const q=Math.min(1,p*1.4);c.font='24px system-ui,sans-serif';
+  const rows=[['Recommended line',d.line],['Current utilization',d.util],['Available credit',d.avail]];
+  rows.forEach((r,i)=>{if(q>i*.3){c.fillStyle='#e7ebf0';c.textAlign='left';c.fillText(r[0],24,112+i*40);c.textAlign='right';c.fillStyle=i===2?'#3ecf9b':'#e7ebf0';c.fillText('CAD '+r[1].toLocaleString(),488,112+i*40)}});c.textAlign='left';
+  c.fillStyle='#2b3543';rr(c,24,236,464,22,6);c.fill();c.fillStyle='#f0b43c';rr(c,24,236,Math.max(6,464*(d.util/d.line)*q),22,6);c.fill();
+  c.fillStyle='#93a0b0';c.font='16px system-ui,sans-serif';c.fillText('utilization '+Math.round(d.util/d.line*100)+'%  ·  capped by risk, cash flow, turnover, debt',24,278)},.3);
+ put(labelSprite('Dealer credit line',8,2,'#fff'),0,8.2,0,g);S[12]={g,link:true,reset(){scr.reset()},tick(t,dt,on,done){scr.tick(on,done,dt)}}}
+// 13 dealer risk model (ML)
+{const g=side(232);const core=new T.Mesh(new T.IcosahedronGeometry(1.1,1),mat(0x7447ac,{roughness:.3}));core.position.y=9.6;g.add(core);
+ const scr=screenPanel(g,5,(c,p)=>{const d=FP.dealer;c.fillStyle='#0f1620';c.fillRect(0,0,512,288);c.fillStyle='#b99ae6';c.font='600 20px monospace';c.fillText('DEALER RISK MODEL · gradient-boosted trees',16,30);
+  c.fillStyle='#e7ebf0';c.font='600 40px system-ui,sans-serif';if(p>.1)c.fillText('PD '+d.pd+'%',20,82);c.fillStyle=d.band==='Low'?'#3ecf9b':'#ffb020';c.font='600 26px system-ui,sans-serif';if(p>.1)c.fillText('Risk band: '+d.band,200,80);
+  c.font='19px system-ui,sans-serif';const n=Math.ceil(p*3.4);
+  c.fillStyle='#3ecf9b';c.fillText('Lower risk (SHAP)',20,122);c.fillStyle='#ff9a94';c.fillText('Raises risk',270,122);
+  d.pos.slice(0,n).forEach((s,i)=>{c.fillStyle='#e7ebf0';wrapText(c,'+ '+s,20,154+i*42,232,21)});d.neg.slice(0,n).forEach((s,i)=>{c.fillStyle='#e7ebf0';wrapText(c,'− '+s,270,154+i*42,222,21)});
+  c.fillStyle='#93a0b0';c.font='16px system-ui,sans-serif';c.fillText('Auditable: PD is a model output. The LLM never decides.',16,278)},.28);
+ put(labelSprite('Dealer risk model',8,2,'#fff'),0,11.6,0,g);
+ S[13]={g,link:true,reset(){scr.reset()},tick(t,dt,on,done){scr.tick(on,done,dt);core.rotation.y+=dt*(on?3:.6);core.rotation.x+=dt*.4;glow(core,on||done,0x7447ac)}}}
+// 14 vehicle risk model (ML)
+{const g=side(250);const scr=screenPanel(g,5,(c,p)=>{const v=FP.veh;c.fillStyle='#0f1620';c.fillRect(0,0,512,288);c.fillStyle='#b99ae6';c.font='600 20px monospace';c.fillText('VEHICLE RISK MODEL · is it good collateral?',16,30);
+  const rows=[['Predicted resale',cad(v.resale)],['Recovery value',cad(v.recovery)],['Expected days to sell',v.days+' days'],['Liquidity score',v.liq+' / 100'],['Expected margin',cad(v.margin)]];const n=Math.ceil(p*5.3);c.font='23px system-ui,sans-serif';
+  rows.slice(0,n).forEach((r,i)=>{c.fillStyle='#93a0b0';c.textAlign='left';c.fillText(r[0],24,72+i*36);c.fillStyle='#e7ebf0';c.textAlign='right';c.fillText(r[1],488,72+i*36)});c.textAlign='left';
+  if(p>.85){c.fillStyle=v.band==='Low'?'#3ecf9b':v.band==='Medium'?'#ffb020':'#ff9a94';c.font='600 26px system-ui,sans-serif';c.fillText('Vehicle risk: '+v.band.toUpperCase()+'  ('+v.title+' title)',24,266)}},.28);
+ put(labelSprite('Vehicle risk model',8,2,'#fff'),0,8.2,0,g);S[14]={g,link:true,reset(){scr.reset()},tick(t,dt,on,done){scr.tick(on,done,dt)}}}
+// 15 transaction risk engine + decision (rules + ML; human validates the exception)
+{const a=arch(268,0x39434f,7,14);const cols=[0x30d158,0xffd60a,0xff3b30],L=cols.map((c,i)=>put(new T.Mesh(new T.SphereGeometry(.42,16,12),mat(0x444444)),0,5.2,-1.8+i*1.8,a.g));
+ const arm=new T.Group();arm.position.set(0,1.6,-3.2);a.g.add(arm);put(box(.3,.3,6.4,0xe8590c),0,0,3.2,arm);
+ const head=put(new T.Mesh(new T.SphereGeometry(.45,16,12),mat(0xf0c8a0)),0,2.9,-5.2,a.g),body=put(new T.Mesh(new T.CylinderGeometry(.35,.5,1.4,12),mat(0xf0a040)),0,1.9,-5.2,a.g);
+ put(labelSprite('Transaction risk engine',9,2.2,'#fff'),0,7.6,0,a.g);const st=labelSprite('',10,2,'#fff');put(st,0,10,0,a.g);let ang=0;
+ const gs=side(268);gs.position.z=26;
+ const scr=screenPanel(gs,5,(c,p)=>{const T_=FP.tx;c.fillStyle='#0f1620';c.fillRect(0,0,512,288);c.fillStyle='#e7ebf0';c.font='600 20px monospace';c.fillText('DEALER + VEHICLE + LIMIT + IMPORT + ECONOMICS',12,28);
+  c.font='21px system-ui,sans-serif';const n=Math.ceil(p*(T_.reasons.length+.6));
+  T_.reasons.slice(0,n).forEach((r,i)=>{c.fillStyle='#ffd27a';wrapText(c,'⚠ '+r,22,70+i*34,470,22)});
+  if(p>.7){c.fillStyle='#93a0b0';c.font='18px system-ui,sans-serif';c.fillText('LTV '+T_.ltv+'% · max advance '+T_.adv+'% (branded title) · dealer PD '+FP.dealer.pd+'%',22,262)}},.3);
+ S[15]={g:gs,link:true,reset(){scr.reset()},tick(t,dt,on,done){scr.tick(on,done,dt);const rev=on&&activeT<3.4,ok=(on&&activeT>=3.4)||done;
+   L.forEach((l,i)=>{const lit=(i===0&&ok)||(i===1&&rev);l.material.color.set(lit?cols[i]:0x444444);l.material.emissive=new T.Color(lit?cols[i]:0);l.material.emissiveIntensity=lit?1:0});
+   ang+=((rev?0:-1.25)-ang)*Math.min(1,dt*4);arm.rotation.x=ang;head.visible=body.visible=rev;st.visible=on||done;
+   st.set(rev?'MANUAL REVIEW · human validates':'APPROVED · '+FP.tx.adv+'% advance',rev?'#ffd27a':'#9be7c4')}}}
+// 16 ACV Capital funds the vehicle
+const coins=[];for(let i=0;i<8;i++){const m=new T.Mesh(new T.CylinderGeometry(.5,.5,.14,16),new T.MeshBasicMaterial({color:0xffd166}));m.rotation.x=Math.PI/2;m.visible=false;scene.add(m);coins.push(m)}
+{const g=side(290);put(box(7,5,4,0x2c7a3f),0,2.5,0,g);put(box(7.4,.5,4.4,0x1d5a2b),0,5.2,0,g);put(labelSprite('ACV Capital funds',8,2,'#fff'),0,8.2,0,g);
+ const scr=screenPanel(g,8.8,(c,p)=>{c.fillStyle='#0f1620';c.fillRect(0,0,512,288);c.fillStyle='#77c98a';c.font='600 21px monospace';c.fillText('FLOORPLAN FUNDING · CAD',20,32);
+  const t=FP.tx,rows=[['Funding needed',t.funds+t.dealer],['ACV Capital funds ('+t.adv+'%)',t.funds],['Dealer contributes',t.dealer]];const n=Math.ceil(p*3.3);c.font='26px system-ui,sans-serif';
+  rows.slice(0,n).forEach((r,i)=>{c.fillStyle=i===1?'#3ecf9b':'#e7ebf0';c.textAlign='left';c.fillText(r[0],24,92+i*54);c.textAlign='right';c.fillText(Math.round(r[1]).toLocaleString(),488,92+i*54)});c.textAlign='left';
+  c.fillStyle='#93a0b0';c.font='17px system-ui,sans-serif';c.fillText('Revolving line: available credit drops by the amount funded.',20,262)},.3);
+ const curve=new T.QuadraticBezierCurve3(new T.Vector3(290,5,23),new T.Vector3(290,9,19),new T.Vector3(290,2,14.5));
+ S[16]={g,link:true,reset(){scr.reset()},tick(t,dt,on,done){scr.tick(on,done,dt);coins.forEach((m,i)=>{const v=on;m.visible=!!v;if(v){const u=((t*.35)+i/8)%1;m.position.copy(curve.getPoint(u));m.rotation.y=t*4}})}}}
+// 17 transport + import: car-carrier crosses the border
+const carrier=new T.Group();carrier.position.set(310,0,14);scene.add(carrier);
+{put(box(12,.5,3.4,0x59636f),0,.9,0,carrier);put(box(2.6,2,3.2,0xe8e8e8),-6.8,1.6,0,carrier);
+ [-5,-1.5,1.5,5].forEach(x=>{const w=new T.Mesh(new T.CylinderGeometry(.55,.55,.4,14),mat(0x111111));w.rotation.x=Math.PI/2;w.position.set(x,.55,1.6);carrier.add(w);const w2=w.clone();w2.position.z=-1.6;carrier.add(w2)});
+ const bd=arch(332,0xd9480f,7,14);put(labelSprite('Border: Canada',8,2,'#fff'),0,7.4,0,bd.g);
+ put(box(.2,1.1,1.6,0xd8001f),.4,6.2,-2.4,bd.g);put(labelSprite('Transport + import',9,2.2,'#fff'),310,6,14);
+ S[17]={tick(t,dt,on,done){glow(bd.top,on||done,0xd9480f)}}}
+// 18 dealer inventory + sale
+const sold=labelSprite('SOLD',4,1.4,'#9be7c4');
+{const g=new T.Group();g.position.set(372,0,3);scene.add(g);put(box(10,4.2,6,0x2563a8),0,2.1,0,g);put(box(10.4,.5,6.4,0x173f73),0,4.4,0,g);put(labelSprite('Toronto Auto Group',9,2,'#fff'),0,7.4,0,g);
+ for(let i=0;i<3;i++)put(box(3.6,1.1,1.7,[0x6b7280,0x9ca3af,0x4b5563][i]),-3.5+i*3.6,.6,5.6,g);
+ put(sold,372,5,14);sold.visible=false;
+ const buyer=new T.Group();put(new T.Mesh(new T.SphereGeometry(.45,14,10),mat(0xf0c8a0)),0,2.7,0,buyer);put(new T.Mesh(new T.CylinderGeometry(.35,.5,1.4,12),mat(0x2f6bff)),0,1.7,0,buyer);buyer.position.set(376,0,19);buyer.visible=false;scene.add(buyer);
+ S[18]={reset(){sold.visible=false;buyer.visible=false},tick(t,dt,on,done){const sale=(on&&activeT>2.4)||done;sold.visible=sale;buyer.visible=sale;buyer.position.x=376-(sale?Math.min(3,Math.max(0,activeT-2.4)*2):0)}}}
+// 19 floorplan repaid
+const coins2=[];for(let i=0;i<8;i++){const m=new T.Mesh(new T.CylinderGeometry(.5,.5,.14,16),new T.MeshBasicMaterial({color:0x6bffb0}));m.rotation.x=Math.PI/2;m.visible=false;scene.add(m);coins2.push(m)}
+{const g=side(372);put(box(6,4,3.4,0x2c7a3f),0,2,0,g);put(box(6.4,.5,3.8,0x1d5a2b),0,4.2,0,g);put(labelSprite('Floorplan repaid',8,2,'#fff'),0,7.4,0,g);
+ const scr=screenPanel(g,8.4,(c,p)=>{c.fillStyle='#0f1620';c.fillRect(0,0,512,288);c.fillStyle='#77c98a';c.font='600 21px monospace';c.fillText('ACV CAPITAL · REPAYMENT',20,32);
+  const t=FP.tx;c.font='27px system-ui,sans-serif';c.fillStyle='#e7ebf0';c.textAlign='left';c.fillText('Principal repaid',24,100);c.textAlign='right';if(p>.3)c.fillText('CAD '+t.funds.toLocaleString(),488,100);c.textAlign='left';
+  c.fillStyle='#e7ebf0';c.fillText('Available credit restored',24,150);c.textAlign='right';if(p>.6)c.fillText('+ CAD '+t.funds.toLocaleString(),488,150);c.textAlign='left';
+  c.fillStyle='#93a0b0';c.font='18px system-ui,sans-serif';if(p>.8)wrapText(c,'Days to repay and the sale price become training data for the dealer and vehicle models.',24,206,470,24)},.3);
+ const from=new T.Vector3(372,3,3),to=new T.Vector3(372,3,SIDE_Z),mid=from.clone().lerp(to,.5).setY(9),cv2=new T.QuadraticBezierCurve3(from,mid,to);
+ S[19]={g,link:true,reset(){scr.reset()},tick(t,dt,on,done){scr.tick(on,done,dt);coins2.forEach((m,i)=>{const v=on;m.visible=!!v;if(v){const u=((t*.3)+i/8)%1;m.position.copy(cv2.getPoint(u));m.rotation.y=t*4}})}}}
+
+// 20 learning ring
+{const ring=new T.Mesh(new T.TorusGeometry(7,.35,12,64),mat(0x7a4cff,{roughness:.3}));ring.position.set(54,18,-6);scene.add(ring);
+ put(labelSprite('Learning loop',8,2,'#fff'),54,26.5,-6);
+ const pulses=[];for(let i=0;i<8;i++){const m=new T.Mesh(new T.SphereGeometry(.55,12,10),new T.MeshBasicMaterial({color:i%2?0xffd166:0x6bffb0}));m.visible=false;scene.add(m);pulses.push(m)}
+ let curve=null;
+ S[20]={setCurve(c){curve=c},tick(t,dt,on,done){ring.rotation.y+=dt*(on?2.6:.5);glow(ring,on,0x7a4cff);
+   pulses.forEach((m,i)=>{m.visible=!!(on&&curve);if(on&&curve){const u=((t*.28)+i/pulses.length)%1;m.position.copy(curve.getPoint(u))}})}}}
+
+/* ---------- car ---------- */
+let car;
+function makeCar(k){const d=D[k],g=new T.Group();const col=d.color;const dark=0x14202c;
+  const dims={sedan:{L:4.4,W:1.9,H:.8,cab:[2.3,.75],cabX:-.2,y:.75},suv:{L:4.6,W:2,H:1,cab:[3.1,.9],cabX:-.3,y:.95},truck:{L:5.4,W:2.1,H:1,cab:[1.9,.95],cabX:1.1,y:1.0}}[d.kind];
+  put(box(dims.L,dims.H,dims.W,col),0,dims.y,0,g);put(box(dims.cab[0],dims.cab[1],dims.W-.2,col),dims.cabX,dims.y+dims.H/2+dims.cab[1]/2,0,g);
+  put(box(dims.cab[0]+.02,dims.cab[1]-.25,dims.W-.1,dark),dims.cabX,dims.y+dims.H/2+dims.cab[1]/2,0,g);
+  if(d.kind==='truck'){put(box(2.2,.15,dims.W-.2,0x2a2f36),-1.5,dims.y+dims.H/2+.1,0,g)}
+  [[1.4,1],[1.4,-1],[-1.4,1],[-1.4,-1]].forEach(p=>{const w=new T.Mesh(new T.CylinderGeometry(.5,.5,.35,16),mat(0x111111));w.rotation.x=Math.PI/2;w.position.set(p[0]*(dims.L/4.4),.5,p[1]*(dims.W/2));w.castShadow=true;g.add(w)});
+  put(box(.12,.25,.5,0xfff3b0,{emissive:0xfff3b0,emissiveIntensity:.8}),dims.L/2,dims.y+.1,.6,g);put(box(.12,.25,.5,0xfff3b0,{emissive:0xfff3b0,emissiveIntensity:.8}),dims.L/2,dims.y+.1,-.6,g);
+  if(k==='f150'){put(box(1.2,.5,.15,0x2a2f36),1.7,dims.y+.2,dims.W/2+.02,g);put(box(.9,.4,.12,0x2a2f36),-1,dims.y+.15,-dims.W/2-.02,g);const bent=put(box(.15,.5,dims.W,0x7a1a14),dims.L/2,dims.y-.1,0,g);bent.rotation.z=.4}
+  g.scale.setScalar(1.15);return g}
+
+/* ---------- waypoints & state ---------- */
+const P=(x,y,z)=>new T.Vector3(x,y,z);
+function waypoints(k){const d=D[k],skip=d.fails.some(x=>x);const w=[
+  {p:P(-18,0,0)},
+  {p:P(0,0,0),st:0,dwell:2},
+  {p:P(12,0,0),st:1,dwell:3.2,slow:true},
+  {p:P(26,0,0),st:2,dwell:3.6},
+  {p:P(40,0,0),st:3,dwell:3},
+  {p:P(54,0,0),st:4,dwell:skip?1.6:3.2},
+  {p:P(68,0,0),st:5,dwell:skip?1.6:d.review?5.5:2.4},
+  {p:P(82,0,0),st:6,dwell:4.2},
+  {p:P(96,0,0),st:7,dwell:1.4}];
+  if(d.route==='retain'){w.push({p:P(108,0,-14)},{p:P(128,0,-14),st:7,dwell:3.2})}
+  else if(d.route==='acv'){w.push({p:P(124,0,0)},{p:P(130,0,0),st:7,dwell:3.2})}
+  else{w.push({p:P(108,0,14)},{p:P(128,0,14),st:7,dwell:2.4});
+    [[8,142,3.8],[9,160,3.4],[10,178,3.4],[11,196,4.2],[12,214,3.8],[13,232,4.2],[14,250,4]].forEach(([st,x,dw])=>w.push({p:P(x,0,14),st,dwell:dw}));
+    w.push({p:P(268,0,14),st:15,dwell:7.4},{p:P(290,0,14),st:16,dwell:3.8},{p:P(310,1.15,14),st:17,dwell:5.2,carry:true},{p:P(370,0,14),st:18,dwell:5.4},{p:P(370,0,14),st:19,dwell:4})}
+  const last=w[w.length-1];w.push({p:last.p.clone(),st:20,dwell:7});return w}
+
+let vk='camry',wps=[],wi=0,phase='drive',dwellT=0,auto=true,cycle=true,curStep=-1,done=new Array(21).fill(false),active=-1,activeT=0,time=0,overview=false,finishedT=0;
+const SIDE_SET=new Set([2,4,5,6,9,10,11,12,13,14,15,16,19]);
+function resetStations(){S.forEach(s=>s&&s.reset&&s.reset());done.fill(false);active=-1;carrier.position.x=310}
+function loadVehicle(k){vk=k;if(car)scene.remove(car);car=makeCar(k);scene.add(car);wps=waypoints(k);wi=0;phase='drive';dwellT=0;resetStations();car.position.copy(wps[0].p);car.rotation.y=0;
+  finishedT=0;S[20].setCurve(null);setStep(-1);
+  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-pressed',t.dataset.v===k))}
+function setStep(i){curStep=i;const c=captions(vk),vis=visited(vk);
+  if(i<0){$('#cap').innerHTML='<div class="eyebrow">'+D[vk].name+'</div><h2>Car approaching the yard</h2><p>The process starts by itself the moment the VIN is read.</p>';$('#hudstep').textContent='0/'+vis.length;$('#hudname').textContent='Approach'}
+  else{const x=c[i],human=x[2].startsWith('HUMAN')||x[2].startsWith('BUYER'),pos=vis.indexOf(i)+1;$('#cap').innerHTML='<div class="eyebrow">Stage '+pos+' of '+vis.length+' · '+D[vk].name+'</div><h2>'+x[0]+'</h2><p>'+x[1]+'</p><span class="tag'+(human?' human':'')+'">'+x[2]+'</span>';$('#hudstep').textContent=pos+'/'+vis.length;$('#hudname').textContent=STEPS[i]}
+  $('#dots').innerHTML=vis.map((j,n)=>'<button class="dot '+(j===i?'on':vis.indexOf(j)<vis.indexOf(i)?'past':'')+'" data-s="'+j+'">'+(n+1)+' '+STEPS[j]+'</button>').join('')}
+function enter(w){active=w.st;activeT=0;setStep(w.st);
+  if(w.st===20){const from=car.position.clone(),to=S[4].g.position.clone().setY(7.5);const mid=from.clone().lerp(to,.5).setY(30);S[20].setCurve(new T.QuadraticBezierCurve3(from,mid,to));overview=true;updateViewBtn()}}
+function leave(){if(active>=0)done[active]=true;active=-1;wi++;phase='drive';if(wi>=wps.length){phase='end';finishedT=0}}
+function jumpTo(st){const vis=visited(vk);if(!vis.includes(st))return;done.fill(false);vis.forEach(j=>{if(j<st)done[j]=true});S.forEach(s=>s&&s.reset&&s.reset());
+  const i=wps.findIndex(w=>w.st===st);if(i<0)return;wi=i;car.position.copy(wps[i].p);const prev=wps[Math.max(0,i-1)].p;const dir=wps[i].p.clone().sub(prev);if(dir.lengthSq()>.01)car.rotation.y=Math.atan2(-dir.z,dir.x);
+  phase='dwell';dwellT=0;if(st<20&&overview){overview=false;updateViewBtn()}enter(wps[i]);if(st===18)carrier.position.x=350}
+function next(){if(phase==='dwell')leave();else if(phase==='drive'){const nx=wps.slice(wi).find(w=>w.st!==undefined);if(nx)jumpTo(nx.st)}else if(phase==='end')loadVehicle(vk)}
+function prev(){const vis=visited(vk),idx=Math.max(0,vis.indexOf(curStep<0?0:curStep)-1);jumpTo(vis[idx])}
+
+let camYaw=0,camZoom=1,camPos=new T.Vector3(-30,12,20),camLook=new T.Vector3(0,1,0);
+function updateCamera(dt){const tgt=new T.Vector3(),pos=new T.Vector3();
+  if(overview){if(D[vk].route==='copart'){tgt.set(205,0,5);pos.set(205,270,160)}else{tgt.set(78,0,0);pos.set(78,105,80)}}
+  else{const focus=car.position.clone();const off=new T.Vector3(-13,9,17).multiplyScalar(camZoom).applyAxisAngle(new T.Vector3(0,1,0),camYaw);
+    const side=SIDE_SET.has(active);if(side)off.z=Math.min(off.z,24*camZoom);pos.copy(focus).add(off);tgt.copy(focus).add(new T.Vector3(side?3:7,2,side?4:0))}
+  camPos.lerp(pos,Math.min(1,dt*2.5));camLook.lerp(tgt,Math.min(1,dt*3));camera.position.copy(camPos);camera.lookAt(camLook)}
+function updateViewBtn(){$('#view-mode').setAttribute('aria-pressed',overview)}
+
+const linkBeam=new T.Mesh(new T.BoxGeometry(1,.12,.12),new T.MeshBasicMaterial({color:0x19e0ff,transparent:true,opacity:.7}));linkBeam.visible=false;scene.add(linkBeam);
+let last=performance.now();
+function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;time+=dt;
+  const w=wps[wi];
+  if(phase==='drive'&&w){const to=w.p.clone().sub(car.position),dist=to.length();const spd=w.slow?5:(wi>0&&wps[wi-1].slow?5:16);
+    if(dist<.08){car.position.copy(w.p);if(w.st!==undefined){phase='dwell';dwellT=0;enter(w)}else wi++}
+    else{const stp=Math.min(dist,spd*dt);car.position.add(to.clone().normalize().multiplyScalar(stp));const ty=Math.atan2(-to.z,to.x);let dy=ty-car.rotation.y;dy=Math.atan2(Math.sin(dy),Math.cos(dy));car.rotation.y+=dy*Math.min(1,dt*6)}}
+  else if(phase==='dwell'&&w){dwellT+=dt;activeT+=dt;if(w.carry){carrier.position.x=Math.min(350,carrier.position.x+dt*7);car.position.x=carrier.position.x-.5;car.position.y=1.15}
+    if(auto&&dwellT>=w.dwell)leave()}
+  else if(phase==='end'){finishedT+=dt;if(auto&&cycle&&finishedT>1.5){const ks=Object.keys(D);const nk=ks[(ks.indexOf(vk)+1)%ks.length];overview=false;updateViewBtn();loadVehicle(nk)}}
+  S.forEach((s,i)=>{if(s)s.tick(time,dt,active===i,done[i])});
+  if(active>=0&&S[active]&&S[active].link){const a=S[active].g.position,c=car.position;const mid=a.clone().lerp(c,.5);const len=a.distanceTo(c);
+    linkBeam.visible=true;linkBeam.position.copy(mid).setY(2.4);linkBeam.scale.set(len,1,1);linkBeam.rotation.y=-Math.atan2(a.z-c.z,a.x-c.x)}
+  else linkBeam.visible=false;
+  updateCamera(dt);renderer.render(scene,camera);requestAnimationFrame(frame)}
+
+function resize(){const w=view.clientWidth,h=view.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+addEventListener('resize',resize);
+let drag=null;view.addEventListener('pointerdown',e=>{drag=e.clientX});addEventListener('pointerup',()=>drag=null);
+addEventListener('pointermove',e=>{if(drag!==null){camYaw-=(e.clientX-drag)*.006;drag=e.clientX}});
+view.addEventListener('wheel',e=>{e.preventDefault();camZoom=Math.max(.5,Math.min(2.2,camZoom*(e.deltaY>0?1.08:.93)))},{passive:false});
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{overview=false;updateViewBtn();loadVehicle(t.dataset.v)});
+$('#next').onclick=next;$('#prev').onclick=prev;
+$('#play').onclick=()=>{auto=!auto;$('#play').setAttribute('aria-pressed',auto);$('#play').textContent=auto?'Pause':'Auto-drive'};
+$('#cycle').onchange=e=>cycle=e.target.checked;
+$('#view-mode').onclick=()=>{overview=!overview;updateViewBtn()};
+$('#dots').onclick=e=>{const s=e.target.dataset&&e.target.dataset.s;if(s!==undefined&&s!=='')jumpTo(+s)};
+addEventListener('keydown',e=>{if(e.key==='ArrowRight')next();if(e.key==='ArrowLeft')prev()});
+if(matchMedia)matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>setTimeout(applyTheme,50));
+new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+applyTheme();resize();loadVehicle('camry');requestAnimationFrame(frame);
+</script>
+
+</body></html>

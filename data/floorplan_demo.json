@@ -1,0 +1,819 @@
+{
+ "dealers": {
+  "DEALER_001": {
+   "dealer_id": "DEALER_001",
+   "name": "Toronto Auto Group",
+   "country": "Canada",
+   "pd": 0.02799986402093735,
+   "band": "Low",
+   "credit_line": 650000.0,
+   "utilization": 410000.0,
+   "utilization_pct": 0.6307692307692307,
+   "available": 240000.0,
+   "status": "APPROVED",
+   "positive": [
+    {
+     "feature": "inventory_turnover_days",
+     "label": "Inventory turnover (days)",
+     "shap": -0.3183991442719208
+    },
+    {
+     "feature": "bank_balance_pct",
+     "label": "Average bank balance",
+     "shap": -0.2246653626202424
+    },
+    {
+     "feature": "prior_delinquency_count",
+     "label": "Prior delinquencies",
+     "shap": -0.2225443300553398
+    }
+   ],
+   "negative": [
+    {
+     "feature": "average_days_to_repay",
+     "label": "Average days to repay",
+     "shap": 0.7012832103617074
+    },
+    {
+     "feature": "historical_utilization",
+     "label": "Historical utilization",
+     "shap": 0.3818896633018733
+    },
+    {
+     "feature": "acv_purchase_count",
+     "label": "ACV purchase history",
+     "shap": 0.2987843239736759
+    }
+   ],
+   "cap_detail": {
+    "line": 650000.0,
+    "inventory_need": 503653.3673112935,
+    "cap_inventory": 705114.7142358108,
+    "cap_cash": 978952.317465295
+   }
+  },
+  "DEALER_002": {
+   "dealer_id": "DEALER_002",
+   "name": "Maple Motors",
+   "country": "Canada",
+   "pd": 0.07798622052034118,
+   "band": "Medium",
+   "credit_line": 290000.0,
+   "utilization": 150000.0,
+   "utilization_pct": 0.5172413793103449,
+   "available": 140000.0,
+   "status": "APPROVED",
+   "positive": [
+    {
+     "feature": "historical_utilization",
+     "label": "Historical utilization",
+     "shap": -0.25740094225076465
+    },
+    {
+     "feature": "owner_guarantor_score",
+     "label": "Owner / guarantor score",
+     "shap": -0.15491755951229694
+    },
+    {
+     "feature": "aged_inventory_ratio",
+     "label": "Aged inventory share",
+     "shap": -0.1423223756778413
+    }
+   ],
+   "negative": [
+    {
+     "feature": "debt_to_revenue",
+     "label": "Existing debt vs revenue",
+     "shap": 0.43009976029010194
+    },
+    {
+     "feature": "late_payment_count",
+     "label": "Late payments",
+     "shap": 0.37620097320885565
+    },
+    {
+     "feature": "cash_flow_volatility",
+     "label": "Cash-flow volatility",
+     "shap": 0.3247583412207946
+    }
+   ],
+   "cap_detail": {
+    "line": 290000.0,
+    "inventory_need": 298414.96015168546,
+    "cap_inventory": 417780.9442123596,
+    "cap_cash": 395189.59831686947
+   }
+  },
+  "DEALER_003": {
+   "dealer_id": "DEALER_003",
+   "name": "North Star Auto",
+   "country": "Canada",
+   "pd": 0.1861670052666204,
+   "band": "High",
+   "credit_line": 110000.0,
+   "utilization": 60000.0,
+   "utilization_pct": 0.5454545454545454,
+   "available": 50000.0,
+   "status": "MANUAL REVIEW",
+   "positive": [
+    {
+     "feature": "acv_purchase_count",
+     "label": "ACV purchase history",
+     "shap": -0.2229999442049007
+    },
+    {
+     "feature": "historical_utilization",
+     "label": "Historical utilization",
+     "shap": -0.10026428585739902
+    },
+    {
+     "feature": "ebitda_margin",
+     "label": "EBITDA margin",
+     "shap": -0.08925385050758151
+    }
+   ],
+   "negative": [
+    {
+     "feature": "inventory_turnover_days",
+     "label": "Inventory turnover (days)",
+     "shap": 0.5768592959942456
+    },
+    {
+     "feature": "acv_repayment_score",
+     "label": "ACV repayment history",
+     "shap": 0.5344728388688865
+    },
+    {
+     "feature": "debt_to_revenue",
+     "label": "Existing debt vs revenue",
+     "shap": 0.4881968940845927
+    }
+   ],
+   "cap_detail": {
+    "line": 110000.0,
+    "inventory_need": 258285.67576580582,
+    "cap_inventory": 361599.94607212814,
+    "cap_cash": 174574.63569754348
+   }
+  },
+  "DEALER_004": {
+   "dealer_id": "DEALER_004",
+   "name": "Rapid Auto Imports",
+   "country": "Canada",
+   "pd": 0.03505482028403197,
+   "band": "Low",
+   "credit_line": 510000.0,
+   "utilization": 480000.0,
+   "utilization_pct": 0.9411764705882353,
+   "available": 30000.0,
+   "status": "MANUAL REVIEW",
+   "positive": [
+    {
+     "feature": "cash_flow_volatility",
+     "label": "Cash-flow volatility",
+     "shap": -0.840971993952959
+    },
+    {
+     "feature": "inventory_turnover_days",
+     "label": "Inventory turnover (days)",
+     "shap": -0.2691878103549771
+    },
+    {
+     "feature": "aged_inventory_ratio",
+     "label": "Aged inventory share",
+     "shap": -0.20258073273131666
+    }
+   ],
+   "negative": [
+    {
+     "feature": "current_utilization",
+     "label": "Credit-line utilization",
+     "shap": 1.7788889098527723
+    },
+    {
+     "feature": "debt_to_revenue",
+     "label": "Existing debt vs revenue",
+     "shap": 0.25425527543496035
+    },
+    {
+     "feature": "average_days_to_repay",
+     "label": "Average days to repay",
+     "shap": 0.1318509096775742
+    }
+   ],
+   "cap_detail": {
+    "line": 510000.0,
+    "inventory_need": 410942.90200575936,
+    "cap_inventory": 575320.0628080631,
+    "cap_cash": 743251.7828141502
+   }
+  },
+  "DEALER_005": {
+   "dealer_id": "DEALER_005",
+   "name": "Grupo Autos Monterrey",
+   "country": "Mexico",
+   "pd": 0.039715000248981905,
+   "band": "Low",
+   "credit_line": 690000.0,
+   "utilization": 330000.0,
+   "utilization_pct": 0.4782608695652174,
+   "available": 360000.0,
+   "status": "APPROVED",
+   "positive": [
+    {
+     "feature": "inventory_turnover_days",
+     "label": "Inventory turnover (days)",
+     "shap": -0.3461864208220948
+    },
+    {
+     "feature": "owner_guarantor_score",
+     "label": "Owner / guarantor score",
+     "shap": -0.28122348545747183
+    },
+    {
+     "feature": "aged_inventory_ratio",
+     "label": "Aged inventory share",
+     "shap": -0.20884190075094491
+    }
+   ],
+   "negative": [
+    {
+     "feature": "average_days_to_repay",
+     "label": "Average days to repay",
+     "shap": 0.6865049433340921
+    },
+    {
+     "feature": "debt_to_revenue",
+     "label": "Existing debt vs revenue",
+     "shap": 0.43706051931487633
+    },
+    {
+     "feature": "historical_utilization",
+     "label": "Historical utilization",
+     "shap": 0.3995825119994852
+    }
+   ],
+   "cap_detail": {
+    "line": 690000.0,
+    "inventory_need": 573945.9358559828,
+    "cap_inventory": 803524.310198376,
+    "cap_cash": 1068415.0839370657
+   }
+  }
+ },
+ "vehicles": {
+  "VEHICLE_001": {
+   "label": "2018 Ford F-150",
+   "title": "clean",
+   "countries": {
+    "Canada": {
+     "eligibility": {
+      "country": "Canada",
+      "status": "ELIGIBLE",
+      "reasons": []
+     },
+     "economics": {
+      "price": 18500.0,
+      "transport": 1200.0,
+      "duty": 0.0,
+      "tax": 985.0,
+      "compliance": 700.0,
+      "import_total": 1685.0,
+      "landed": 21385.0,
+      "resale": 28600.0136886958,
+      "days": 43.48095115122228,
+      "recovery": 23911.547372200912,
+      "margin": 7215.013688695799,
+      "margin_pct": 0.33738665834443765,
+      "liquidity": 0.6668783205419746,
+      "band": "Low",
+      "econ_status": "ECONOMICALLY ATTRACTIVE"
+     }
+    },
+    "Mexico": {
+     "eligibility": {
+      "country": "Mexico",
+      "status": "ELIGIBLE",
+      "reasons": []
+     },
+     "economics": {
+      "price": 18500.0,
+      "transport": 1500.0,
+      "duty": 1850.0,
+      "tax": 3496.0,
+      "compliance": 900.0,
+      "import_total": 6246.0,
+      "landed": 26246.0,
+      "resale": 28833.106200377675,
+      "days": 43.12282302009631,
+      "recovery": 23985.78894567033,
+      "margin": 2587.106200377675,
+      "margin_pct": 0.09857144709203974,
+      "liquidity": 0.6708575219989298,
+      "band": "Medium",
+      "econ_status": "ECONOMICALLY ATTRACTIVE"
+     }
+    }
+   }
+  },
+  "VEHICLE_002": {
+   "label": "2023 Honda Civic",
+   "title": "clean",
+   "countries": {
+    "Canada": {
+     "eligibility": {
+      "country": "Canada",
+      "status": "ELIGIBLE",
+      "reasons": []
+     },
+     "economics": {
+      "price": 24500.0,
+      "transport": 1200.0,
+      "duty": 0.0,
+      "tax": 1285.0,
+      "compliance": 700.0,
+      "import_total": 1985.0,
+      "landed": 27685.0,
+      "resale": 34277.45726915741,
+      "days": 49.37197815981389,
+      "recovery": 28847.423210272987,
+      "margin": 6592.457269157407,
+      "margin_pct": 0.2381237951655195,
+      "liquidity": 0.6014224648909566,
+      "band": "Medium",
+      "econ_status": "ECONOMICALLY ATTRACTIVE"
+     }
+    },
+    "Mexico": {
+     "eligibility": {
+      "country": "Mexico",
+      "status": "INELIGIBLE",
+      "reasons": [
+       "Model year does not meet the configured import route"
+      ]
+     },
+     "economics": {
+      "price": 24500.0,
+      "transport": 1500.0,
+      "duty": 2450.0,
+      "tax": 4552.0,
+      "compliance": 900.0,
+      "import_total": 7902.0,
+      "landed": 33902.0,
+      "resale": 34709.58827666022,
+      "days": 48.56822064166967,
+      "recovery": 29429.416074231725,
+      "margin": 807.5882766602226,
+      "margin_pct": 0.02382125764439333,
+      "liquidity": 0.610353103981448,
+      "band": "Medium",
+      "econ_status": "ECONOMICALLY ATTRACTIVE"
+     }
+    }
+   }
+  },
+  "VEHICLE_003": {
+   "label": "2017 Toyota Tacoma",
+   "title": "rebuilt",
+   "countries": {
+    "Canada": {
+     "eligibility": {
+      "country": "Canada",
+      "status": "MANUAL REVIEW",
+      "reasons": [
+       "Rebuilt / branded title"
+      ]
+     },
+     "economics": {
+      "price": 13200.0,
+      "transport": 1200.0,
+      "duty": 0.0,
+      "tax": 720.0,
+      "compliance": 700.0,
+      "import_total": 1420.0,
+      "landed": 15820.0,
+      "resale": 20287.56738175211,
+      "days": 60.64385647131108,
+      "recovery": 14874.020260938234,
+      "margin": 4467.567381752109,
+      "margin_pct": 0.2823999609198552,
+      "liquidity": 0.47617937254098786,
+      "band": "Medium",
+      "econ_status": "ECONOMICALLY ATTRACTIVE"
+     }
+    },
+    "Mexico": {
+     "eligibility": {
+      "country": "Mexico",
+      "status": "MANUAL REVIEW",
+      "reasons": [
+       "Rebuilt / branded title"
+      ]
+     },
+     "economics": {
+      "price": 13200.0,
+      "transport": 1500.0,
+      "duty": 1320.0,
+      "tax": 2563.2000000000003,
+      "compliance": 900.0,
+      "import_total": 4783.200000000001,
+      "landed": 19483.2,
+      "resale": 20036.789899424548,
+      "days": 61.862042033207246,
+      "recovery": 14720.194791393787,
+      "margin": 553.5898994245472,
+      "margin_pct": 0.02841370511130344,
+      "liquidity": 0.46264397740880825,
+      "band": "Medium",
+      "econ_status": "ECONOMICALLY ATTRACTIVE"
+     }
+    }
+   }
+  },
+  "VEHICLE_004": {
+   "label": "2019 BMW X5",
+   "title": "clean",
+   "countries": {
+    "Canada": {
+     "eligibility": {
+      "country": "Canada",
+      "status": "INELIGIBLE",
+      "reasons": [
+       "Compliance / admissibility (RIV)"
+      ]
+     },
+     "economics": {
+      "price": 33500.0,
+      "transport": 1200.0,
+      "duty": 0.0,
+      "tax": 1735.0,
+      "compliance": 700.0,
+      "import_total": 2435.0,
+      "landed": 37135.0,
+      "resale": 44892.52570508814,
+      "days": 54.68283775296067,
+      "recovery": 37650.01720483035,
+      "margin": 7757.525705088141,
+      "margin_pct": 0.20890065181333353,
+      "liquidity": 0.5424129138559924,
+      "band": "Medium",
+      "econ_status": "ECONOMICALLY ATTRACTIVE"
+     }
+    },
+    "Mexico": {
+     "eligibility": {
+      "country": "Mexico",
+      "status": "INELIGIBLE",
+      "reasons": [
+       "Model year does not meet the configured import route"
+      ]
+     },
+     "economics": {
+      "price": 33500.0,
+      "transport": 1500.0,
+      "duty": 3350.0,
+      "tax": 6136.0,
+      "compliance": 900.0,
+      "import_total": 10386.0,
+      "landed": 45386.0,
+      "resale": 44287.29863513591,
+      "days": 50.2301160456795,
+      "recovery": 37407.364436701086,
+      "margin": -1098.7013648640932,
+      "margin_pct": -0.02420793559388563,
+      "liquidity": 0.5918875994924498,
+      "band": "High",
+      "econ_status": "ELIGIBLE BUT NOT ECONOMIC"
+     }
+    }
+   }
+  },
+  "VEHICLE_005": {
+   "label": "2020 Ford Explorer",
+   "title": "clean",
+   "countries": {
+    "Canada": {
+     "eligibility": {
+      "country": "Canada",
+      "status": "ELIGIBLE BUT NOT ECONOMIC",
+      "reasons": [
+       "Landed cost exceeds predicted resale value"
+      ]
+     },
+     "economics": {
+      "price": 35000.0,
+      "transport": 1200.0,
+      "duty": 0.0,
+      "tax": 1810.0,
+      "compliance": 700.0,
+      "import_total": 2510.0,
+      "landed": 38710.0,
+      "resale": 35681.90711048637,
+      "days": 61.49815317335233,
+      "recovery": 30255.956845572982,
+      "margin": -3028.0928895136312,
+      "margin_pct": -0.07822508110342628,
+      "liquidity": 0.4666871869627518,
+      "band": "High",
+      "econ_status": "ELIGIBLE BUT NOT ECONOMIC"
+     }
+    },
+    "Mexico": {
+     "eligibility": {
+      "country": "Mexico",
+      "status": "INELIGIBLE",
+      "reasons": [
+       "Model year does not meet the configured import route"
+      ]
+     },
+     "economics": {
+      "price": 35000.0,
+      "transport": 1500.0,
+      "duty": 3500.0,
+      "tax": 6400.0,
+      "compliance": 900.0,
+      "import_total": 10800.0,
+      "landed": 47300.0,
+      "resale": 35429.69716874992,
+      "days": 60.55016837074672,
+      "recovery": 29944.565085087248,
+      "margin": -11870.302831250083,
+      "margin_pct": -0.2509577765591984,
+      "liquidity": 0.4772203514361475,
+      "band": "High",
+      "econ_status": "ELIGIBLE BUT NOT ECONOMIC"
+     }
+    }
+   }
+  },
+  "VEHICLE_006": {
+   "label": "2018 Jeep Grand Cherokee",
+   "title": "clean",
+   "countries": {
+    "Canada": {
+     "eligibility": {
+      "country": "Canada",
+      "status": "INELIGIBLE",
+      "reasons": [
+       "Stolen vehicle flag"
+      ]
+     },
+     "economics": {
+      "price": 19800.0,
+      "transport": 1200.0,
+      "duty": 0.0,
+      "tax": 1050.0,
+      "compliance": 700.0,
+      "import_total": 1750.0,
+      "landed": 22750.0,
+      "resale": 27151.85558619952,
+      "days": 44.41884885389821,
+      "recovery": 22722.695410343076,
+      "margin": 4401.855586199519,
+      "margin_pct": 0.1934881576351437,
+      "liquidity": 0.6564572349566864,
+      "band": "Medium",
+      "econ_status": "ECONOMICALLY ATTRACTIVE"
+     }
+    },
+    "Mexico": {
+     "eligibility": {
+      "country": "Mexico",
+      "status": "INELIGIBLE",
+      "reasons": [
+       "Stolen vehicle flag"
+      ]
+     },
+     "economics": {
+      "price": 19800.0,
+      "transport": 1500.0,
+      "duty": 1980.0,
+      "tax": 3724.8,
+      "compliance": 900.0,
+      "import_total": 6604.8,
+      "landed": 27904.8,
+      "resale": 27440.851501154666,
+      "days": 44.232606324543745,
+      "recovery": 23170.287780925606,
+      "margin": -463.94849884533323,
+      "margin_pct": -0.016626118045832017,
+      "liquidity": 0.6585265963939583,
+      "band": "High",
+      "econ_status": "ELIGIBLE BUT NOT ECONOMIC"
+     }
+    }
+   }
+  },
+  "VEHICLE_007": {
+   "label": "2017 Ford F-150 (frame damage)",
+   "title": "rebuilt",
+   "countries": {
+    "Canada": {
+     "eligibility": {
+      "country": "Canada",
+      "status": "MANUAL REVIEW",
+      "reasons": [
+       "Rebuilt / branded title"
+      ]
+     },
+     "economics": {
+      "price": 9780.0,
+      "transport": 1200.0,
+      "duty": 0.0,
+      "tax": 549.0,
+      "compliance": 700.0,
+      "import_total": 1249.0,
+      "landed": 12229.0,
+      "resale": 15726.115178671509,
+      "days": 73.64599092443163,
+      "recovery": 10723.942016745767,
+      "margin": 3497.115178671509,
+      "margin_pct": 0.2859690227059865,
+      "liquidity": 0.3317112119507596,
+      "band": "Medium",
+      "econ_status": "ECONOMICALLY ATTRACTIVE"
+     }
+    },
+    "Mexico": {
+     "eligibility": {
+      "country": "Mexico",
+      "status": "MANUAL REVIEW",
+      "reasons": [
+       "Rebuilt / branded title"
+      ]
+     },
+     "economics": {
+      "price": 9780.0,
+      "transport": 1500.0,
+      "duty": 978.0,
+      "tax": 1961.28,
+      "compliance": 900.0,
+      "import_total": 3839.2799999999997,
+      "landed": 15119.279999999999,
+      "resale": 15540.460496419868,
+      "days": 73.84714629051466,
+      "recovery": 10479.509016483664,
+      "margin": 421.1804964198691,
+      "margin_pct": 0.027857179470177754,
+      "liquidity": 0.32947615232761485,
+      "band": "High",
+      "econ_status": "ECONOMICALLY ATTRACTIVE"
+     }
+    }
+   }
+  }
+ },
+ "transactions": {
+  "approve": {
+   "vehicle": "VEHICLE_001",
+   "dealer": "DEALER_001",
+   "country": "Canada",
+   "decision": "APPROVE",
+   "reasons": [
+    "Dealer PD within policy",
+    "Available credit sufficient",
+    "Import eligibility passed",
+    "Vehicle margin positive",
+    "LTV within policy",
+    "Recovery value acceptable",
+    "Expected time-to-sale acceptable"
+   ],
+   "approve_reasons": [
+    "Dealer PD within policy",
+    "Available credit sufficient",
+    "Import eligibility passed",
+    "Vehicle margin positive",
+    "LTV within policy",
+    "Recovery value acceptable",
+    "Expected time-to-sale acceptable"
+   ],
+   "funding_needed": 21385.0,
+   "acv_funds": 21385.0,
+   "dealer_contributes": 0.0,
+   "ltv": 0.7477269148459343,
+   "max_advance": 0.9,
+   "util_after": 0.6636692307692308
+  },
+  "branded": {
+   "vehicle": "VEHICLE_007",
+   "dealer": "DEALER_001",
+   "country": "Canada",
+   "decision": "MANUAL REVIEW",
+   "reasons": [
+    "Rebuilt / branded title",
+    "Recovery value below exposure",
+    "Expected time-to-sale above policy"
+   ],
+   "approve_reasons": [
+    "Dealer PD within policy",
+    "Available credit sufficient",
+    "Vehicle margin positive",
+    "LTV within policy"
+   ],
+   "funding_needed": 12229.0,
+   "acv_funds": 11008.280625070056,
+   "dealer_contributes": 1220.719374929944,
+   "ltv": 0.7,
+   "max_advance": 0.7,
+   "util_after": 0.6477050471154924
+  },
+  "utilization": {
+   "vehicle": "VEHICLE_001",
+   "dealer": "DEALER_004",
+   "country": "Canada",
+   "decision": "MANUAL REVIEW",
+   "reasons": [
+    "Dealer utilization above 85% after funding"
+   ],
+   "approve_reasons": [
+    "Dealer PD within policy",
+    "Available credit sufficient",
+    "Import eligibility passed",
+    "Vehicle margin positive",
+    "LTV within policy",
+    "Recovery value acceptable",
+    "Expected time-to-sale acceptable"
+   ],
+   "funding_needed": 21385.0,
+   "acv_funds": 21385.0,
+   "dealer_contributes": 0.0,
+   "ltv": 0.7477269148459343,
+   "max_advance": 0.9,
+   "util_after": 0.9831078431372549
+  },
+  "not_economic": {
+   "vehicle": "VEHICLE_005",
+   "dealer": "DEALER_001",
+   "country": "Canada",
+   "decision": "DECLINE",
+   "reasons": [
+    "Vehicle economics negative"
+   ],
+   "approve_reasons": [
+    "Dealer PD within policy",
+    "Available credit sufficient",
+    "LTV within policy"
+   ],
+   "funding_needed": 38710.0,
+   "acv_funds": 32113.716399437733,
+   "dealer_contributes": 6596.283600562267,
+   "ltv": 0.9,
+   "max_advance": 0.9,
+   "util_after": 0.6801749483068273
+  },
+  "ineligible": {
+   "vehicle": "VEHICLE_002",
+   "dealer": "DEALER_005",
+   "country": "Mexico",
+   "decision": "DECLINE",
+   "reasons": [
+    "Import ineligible"
+   ],
+   "approve_reasons": [
+    "Dealer PD within policy",
+    "Available credit sufficient",
+    "Vehicle margin positive",
+    "LTV within policy",
+    "Expected time-to-sale acceptable"
+   ],
+   "funding_needed": 33902.0,
+   "acv_funds": 31238.6294489942,
+   "dealer_contributes": 2663.370551005799,
+   "ltv": 0.9,
+   "max_advance": 0.9,
+   "util_after": 0.5235342455782525
+  },
+  "weak_dealer": {
+   "vehicle": "VEHICLE_001",
+   "dealer": "DEALER_003",
+   "country": "Canada",
+   "decision": "DECLINE",
+   "reasons": [
+    "Dealer PD above threshold"
+   ],
+   "approve_reasons": [
+    "Available credit sufficient",
+    "Import eligibility passed",
+    "Vehicle margin positive",
+    "LTV within policy",
+    "Recovery value acceptable",
+    "Expected time-to-sale acceptable"
+   ],
+   "funding_needed": 21385.0,
+   "acv_funds": 21385.0,
+   "dealer_contributes": 0.0,
+   "ltv": 0.7477269148459343,
+   "max_advance": 0.9,
+   "util_after": 0.7398636363636364
+  }
+ },
+ "portfolio": {
+  "n": 800,
+  "band_counts": {
+   "Low": 570,
+   "Medium": 127,
+   "High": 103
+  },
+  "mean_pd": 0.06155809355958806
+ }
+}

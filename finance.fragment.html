@@ -1,0 +1,270 @@
+<title>ACV International Floorplan Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: main path on top, parallel dealer and vehicle risk feeding one transaction engine, then decision, funding and flywheel. */
+:root{
+  --bg:#EDF0F2;--paper:#FFFFFF;--ink:#17222D;--muted:#566472;--line:#C3CCD4;--soft:#F5F7F8;
+  --capture:#4C5B6B;--rules:#2563A8;--ml:#7447AC;--llm:#B67A00;--human:#B3355F;--decide:#17222D;--route:#2C7A3F;--fail:#B3261E;
+  --capture-bg:#E6EAEE;--rules-bg:#E3EDF8;--ml-bg:#EEE6F7;--llm-bg:#FBF0D9;--human-bg:#F9E1E8;--decide-bg:#E3E7EB;--route-bg:#E2F1E5;--fail-bg:#F8E1DF;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#11171D;--paper:#19222B;--ink:#E7ECF0;--muted:#9AA8B5;--line:#34414E;--soft:#1F2933;
+  --capture:#A7B6C5;--rules:#7FB0E8;--ml:#B99AE6;--llm:#F0B43C;--human:#F08AA9;--decide:#E7ECF0;--route:#77C98A;--fail:#F2867E;
+  --capture-bg:#243039;--rules-bg:#182B40;--ml-bg:#2A2140;--llm-bg:#3A2E12;--human-bg:#40202C;--decide-bg:#26303A;--route-bg:#183020;--fail-bg:#40201E;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11171D;--paper:#19222B;--ink:#E7ECF0;--muted:#9AA8B5;--line:#34414E;--soft:#1F2933;
+  --capture:#A7B6C5;--rules:#7FB0E8;--ml:#B99AE6;--llm:#F0B43C;--human:#F08AA9;--decide:#E7ECF0;--route:#77C98A;--fail:#F2867E;
+  --capture-bg:#243039;--rules-bg:#182B40;--ml-bg:#2A2140;--llm-bg:#3A2E12;--human-bg:#40202C;--decide-bg:#26303A;--route-bg:#183020;--fail-bg:#40201E;color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;padding-inline:16px;padding-block:10px 12px;display:flex;flex-direction:column;overflow:hidden}
+header{display:flex;flex-wrap:wrap;gap:6px 24px;align-items:center;justify-content:space-between;width:100%;max-width:1900px;margin:0 auto 4px}
+h1{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:600;font-size:clamp(24px,2.4vw,32px);margin:0;line-height:1.1}
+.sub{color:var(--muted);font-size:15px;margin:0}
+.links a{color:var(--ml);font-weight:600;font-size:14px;margin-left:14px;text-decoration:none}
+.stage{flex:1;min-height:0;width:100%;max-width:1900px;margin:0 auto;overflow-x:auto;overflow-y:hidden}
+svg.flow{display:block;width:100%;min-width:1100px;height:100%}
+[hidden]{display:none!important}
+svg text{font-family:"Barlow",system-ui,sans-serif;fill:var(--ink)}
+.box{fill:var(--paper);stroke:var(--c);stroke-width:2.5}
+.band{fill:var(--cbg)}
+.tag{font-size:12px;font-weight:600;letter-spacing:.07em;fill:var(--c)}
+.ttl{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:600;font-size:23px}
+.ln{font-size:15px}.sm{font-size:13px}.xs{font-size:12.5px}
+.mu{fill:var(--muted)}.bd{font-weight:600}
+.col{fill:var(--c);font-weight:600}
+.numc{fill:var(--c)}
+.numt{fill:var(--paper);font-size:14px;font-weight:600}
+.ic{stroke:var(--c);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.icf{fill:var(--c)}
+.icb{fill:var(--cbg);stroke:var(--c);stroke-width:2}
+.edge{fill:none;stroke:var(--ink);stroke-width:3}
+.edge.no{stroke:var(--fail)}.edge.ok{stroke:var(--route)}
+.elbl{font-size:13px;font-weight:600}
+.pill{stroke:none}
+.flybig{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:600;font-size:26px}
+.chipbox{fill:var(--paper);stroke:var(--c);stroke-width:2}
+.footnote{font-size:12.5px;fill:var(--muted)}
+.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.seg{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--paper)}
+.seg button{border:0;background:transparent;color:var(--ink);font:600 14px "Barlow",system-ui,sans-serif;padding:7px 14px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.seg button:focus-visible,.clk:focus-visible .box,.mclose:focus-visible{outline:3px solid var(--ml);outline-offset:2px}
+.hint{font-size:13px;color:var(--muted)}
+.clk{cursor:pointer;outline:none}
+.clk:hover .box,.clk:focus-visible .box{stroke-width:4.5}
+.xttl{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:600;font-size:31px}
+.xln{font-size:17.5px}
+.xbig{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:600}
+.modal{position:fixed;inset:0;z-index:10;display:grid;place-items:center;padding:16px;background:rgba(10,16,22,.55)}
+.mcard{--c:var(--ml);--cbg:var(--ml-bg);width:min(620px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--paper);border:1px solid var(--line);border-left:8px solid var(--c);border-radius:0 12px 12px 0;padding:20px 22px 22px;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+.mtop{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.mbadge{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--c);background:var(--cbg);padding:3px 9px;border-radius:5px}
+.mcard h2{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:32px;line-height:1.05;margin:8px 0 12px}
+.mclose{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:8px;font:600 15px "Barlow",sans-serif;padding:6px 12px;cursor:pointer}
+.msec{margin-top:12px}
+.msec b{display:block;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--c);margin-bottom:2px}
+.msec p{margin:0;font-size:17px;line-height:1.45}
+.msec.ex{background:var(--cbg);border-radius:8px;padding:10px 12px}
+</style>
+
+<header>
+  <div>
+    <h1>ACV International Floorplan Intelligence</h1>
+    <p class="sub">An AI-powered cross-border floorplan platform that decides which international dealers deserve capital and which U.S. vehicles are worth financing. Runs after a car is routed to the export path. Illustrative figures.</p>
+  </div>
+  <div class="tools">
+    <div class="seg" role="group" aria-label="View"><button type="button" id="vExec" aria-pressed="true">Executive pitch (5-sec view)</button><button type="button" id="vFull" aria-pressed="false">Full process architecture</button></div>
+    <span class="hint">Click any step to explain it</span>
+    <span class="links" id="links"></span>
+  </div>
+</header>
+<div class="stage"><svg class="flow" id="exec" viewBox="0 0 1894 1065" role="img" aria-label="Executive summary of the floorplan flow"><g id="ge"></g></svg>
+<svg class="flow" id="flow" hidden viewBox="-67 0 1894 1065" role="img" aria-labelledby="ft fd">
+<title id="ft">ACV international floorplan flow</title>
+<desc id="fd">U.S. inventory, import eligibility, landed cost and local resale value, dealer documents read by an LLM, dealer credit line, parallel dealer risk and vehicle risk models, transaction risk engine, approve, review or decline decision, ACV Capital funding with transport, dealer sale and repayment, and the revenue flywheel.</desc>
+<defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1 1L9 5L1 9z" fill="context-stroke"/></marker></defs>
+<g id="g"></g>
+</svg></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mtitle" hidden><div class="mcard" id="mcard"></div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const cv=l=>`--c:var(--${l});--cbg:var(--${l}-bg)`;
+const T=(x,y,s,cls='ln',extra='')=>`<text class="${cls}" x="${x}" y="${y}" ${extra}>${s}</text>`;
+const ICONS={
+ car:(x,y)=>`<path class="icb" d="M${x} ${y+22} h40 v-8 l-7 -3 l-6 -9 h-14 l-6 9 l-7 3 z"/><circle class="icf" cx="${x+10}" cy="${y+24}" r="4.5"/><circle class="icf" cx="${x+30}" cy="${y+24}" r="4.5"/>`,
+ gate:(x,y)=>`<rect class="icf" x="${x}" y="${y}" width="6" height="30"/><rect class="icb" x="${x+8}" y="${y+2}" width="32" height="8"/><path class="ic" d="M${x+14} ${y+20}l4 5l8 -9"/>`,
+ calc:(x,y)=>`<rect class="icb" x="${x+4}" y="${y}" width="30" height="34" rx="3"/><path class="ic" d="M${x+10} ${y+8}h18M${x+10} ${y+17}h6M${x+22} ${y+17}h6M${x+10} ${y+26}h6M${x+22} ${y+26}h6"/>`,
+ docs:(x,y)=>`<rect class="icb" x="${x}" y="${y+4}" width="24" height="30" rx="2"/><rect class="icb" x="${x+10}" y="${y}" width="24" height="30" rx="2"/><path class="ic" d="M${x+15} ${y+10}h14M${x+15} ${y+17}h14"/>`,
+ person:(x,y)=>`<circle class="icb" cx="${x+18}" cy="${y+10}" r="8"/><path class="icb" d="M${x+3} ${y+36} q0 -18 15 -18 q15 0 15 18z"/>`,
+ chart:(x,y)=>`<line class="ic" x1="${x}" y1="${y+34}" x2="${x+38}" y2="${y+34}"/><rect class="icb" x="${x+3}" y="${y+18}" width="8" height="16"/><rect class="icb" x="${x+15}" y="${y+6}" width="8" height="28"/><rect class="icb" x="${x+27}" y="${y+22}" width="8" height="12"/>`,
+ coin:(x,y)=>`<circle class="icb" cx="${x+19}" cy="${y+18}" r="16"/><text x="${x+19}" y="${y+25}" text-anchor="middle" font-size="20" font-weight="600" style="fill:var(--c)">$</text>`,
+ bank:(x,y)=>`<path class="icb" d="M${x} ${y+12} L${x+19} ${y} L${x+38} ${y+12} z"/><rect class="icb" x="${x+4}" y="${y+14}" width="6" height="16"/><rect class="icb" x="${x+16}" y="${y+14}" width="6" height="16"/><rect class="icb" x="${x+28}" y="${y+14}" width="6" height="16"/><rect class="icb" x="${x}" y="${y+31}" width="38" height="5"/>`
+};
+function node({x,y,w,h,l,n,tag,title,icon,body=''}){
+  return `<g class="clk" data-step="${n}" tabindex="0" role="button" aria-label="Explain step ${n}: ${title}" style="${cv(l)}"><rect class="box" x="${x}" y="${y}" width="${w}" height="${h}" rx="12"/>
+  <path class="band" d="M${x+1.25} ${y+62} V${y+13} a11 11 0 0 1 11 -11.75 H${x+w-12.25} a11 11 0 0 1 11 11.75 V${y+62}z"/>
+  <circle class="numc" cx="${x+24}" cy="${y+21}" r="13"/><text class="numt" x="${x+24}" y="${y+26}" text-anchor="middle">${n}</text>
+  ${T(x+46,y+26,tag,'tag')}${T(x+16,y+53,title,'ttl')}${icon?ICONS[icon](x+w-56,y+10):''}${body}</g>`;
+}
+const edge=(d,cls='')=>`<path class="edge ${cls}" d="${d}" marker-end="url(#arr)"/>`;
+const lines=(x,y,arr,dy=20,cls='ln')=>arr.map((s,i)=>T(x,y+i*dy,s,cls)).join('');
+const pillbox=(x,y,w,txt,col,tc='#fff')=>`<rect class="pill" x="${x}" y="${y}" width="${w}" height="24" rx="12" style="fill:${col}"/>`+T(x+w/2,y+17,txt,'xs bd',`text-anchor="middle" style="fill:${tc}"`);
+const Y1=30,H1=270;
+let s='';
+
+/* ---------- row 1: main path ---------- */
+s+=node({x:30,y:Y1,w:300,h:H1,l:'capture',n:1,tag:'DATA',title:'ACV U.S. Inventory',icon:'car',body:
+  lines(46,Y1+92,['Viper condition report','VIN and mileage','Auction value','Expected resale value'],24)+
+  `<rect x="46" y="${Y1+200}" width="238" height="34" rx="6" style="fill:var(--cbg)"/>`+T(165,Y1+222,'Flagged: strong export demand','sm bd','text-anchor="middle" style="fill:var(--c)"')});
+
+s+=node({x:380,y:Y1,w:300,h:H1,l:'rules',n:2,tag:'RULES ENGINE · NOT ML',title:'Import eligibility engine',icon:'gate',body:
+  T(396,Y1+88,'Canada','col')+lines(396,Y1+108,['RIV / admissibility','Recall status','Compliance','Title status'],19,'xs')+
+  T(540,Y1+88,'Mexico','col')+lines(540,Y1+108,['Model year','VIN / origin','Import route','Title / theft status'],19,'xs')+
+  `<line x1="530" y1="${Y1+76}" x2="530" y2="${Y1+186}" style="stroke:var(--line);stroke-width:2"/>`+
+  pillbox(396,Y1+198,120,'ELIGIBLE','var(--route)')+pillbox(524,Y1+198,130,'INELIGIBLE','var(--fail)')+
+  pillbox(396,Y1+230,120,'MANUAL REVIEW','var(--human)')+pillbox(524,Y1+230,130,'NOT ECONOMIC','var(--llm)')});
+
+s+=node({x:730,y:Y1,w:300,h:H1,l:'rules',n:3,tag:'RULES + ML',title:'Landed cost and resale',icon:'calc',body:
+  lines(746,Y1+90,['Price + transport','+ duty + tax + compliance'],20)+T(746,Y1+134,'= Landed cost','ln bd')+
+  T(746,Y1+166,'Predicted local resale value (ML)','sm bd','style="fill:var(--ml)"')+T(746,Y1+186,'Margin = resale − landed cost','sm')+
+  `<rect x="746" y="${Y1+202}" width="268" height="56" rx="6" style="fill:var(--cbg)"/>`+
+  T(756,Y1+220,'Landed 21,400 · Resale 27,800','xs bd')+T(756,Y1+237,'Margin 6,400: ECONOMICALLY ATTRACTIVE','xs bd','style="fill:var(--route)"')+T(756,Y1+252,'CAD, illustrative','xs mu')});
+
+s+=node({x:1080,y:Y1,w:300,h:H1,l:'llm',n:4,tag:'LLM / DOCUMENT AI',title:'Reads dealer documents',icon:'docs',body:
+  lines(1096,Y1+88,['Income statement','Balance sheet','Bank statements','Dealer registration','Owner guarantee'],19,'xs')+
+  T(1096,Y1+194,'Extracts and normalizes the numbers,','xs')+T(1096,Y1+210,'cross-checks documents, writes a summary','xs')+
+  `<rect class="pill" x="1096" y="${Y1+224}" width="268" height="24" rx="12" style="fill:var(--cbg)"/>`+T(1230,Y1+241,'Summary only. Rules + ML decide.','xs bd','text-anchor="middle" style="fill:var(--c)"')});
+
+s+=node({x:1430,y:Y1,w:300,h:H1,l:'ml',n:5,tag:'RULES + ML',title:'Dealer credit line',icon:'bank',body:
+  T(1446,Y1+84,'Toronto Auto Group','sm bd')+
+  T(1446,Y1+110,'Recommended line','ln')+T(1714,Y1+110,'CAD 650,000','ln bd','text-anchor="end"')+
+  T(1446,Y1+134,'Current utilization','ln')+T(1714,Y1+134,'CAD 410,000','ln bd','text-anchor="end"')+
+  T(1446,Y1+158,'Available credit','ln')+T(1714,Y1+158,'CAD 240,000','ln bd','text-anchor="end" style="fill:var(--route)"')+
+  `<rect x="1446" y="${Y1+172}" width="268" height="12" rx="6" style="fill:var(--line)"/><rect x="1446" y="${Y1+172}" width="169" height="12" rx="6" style="fill:var(--c)"/>`+
+  T(1446,Y1+208,'Capped by risk, cash flow,','xs')+T(1446,Y1+224,'inventory turnover, repayment history','xs')+T(1446,Y1+240,'and existing debt. Not maximized.','xs')});
+
+s+=edge('M330 165 H378')+edge('M680 165 H728','ok')+edge('M1030 165 H1078')+edge('M1380 165 H1428');
+s+=edge('M530 300 V332','no')+T(544,322,'NO','elbl','style="fill:var(--fail)"')+
+ `<g style="--c:var(--fail);--cbg:var(--fail-bg)"><rect class="box" x="380" y="334" width="300" height="42" rx="10" style="fill:var(--fail-bg)"/>${T(530,361,'Floorplan unavailable (button disabled)','ln bd','text-anchor="middle" style="fill:var(--fail)"')}</g>`;
+s+=T(704,152,'YES','elbl','text-anchor="middle" style="fill:var(--route)"');
+s+=edge('M1580 300 V398');
+
+/* ---------- row 2: parallel risk, engine, decision ---------- */
+const Y2=400;
+s+=node({x:1430,y:Y2,w:300,h:160,l:'ml',n:6,tag:'MACHINE LEARNING',title:'Dealer risk model',icon:'person',body:
+  T(1446,Y2+84,'PD 2.8% · Risk band: Low','sm bd')+
+  T(1446,Y2+104,'+ Fast inventory turnover','xs','style="fill:var(--route)"')+T(1446,Y2+120,'+ Healthy bank balance, no delinquencies','xs','style="fill:var(--route)"')+
+  T(1446,Y2+138,'− Average days to repay','xs','style="fill:var(--fail)"')+T(1446,Y2+154,'Gradient-boosted trees + SHAP','xs mu')});
+s+=node({x:1430,y:Y2+170,w:300,h:160,l:'ml',n:7,tag:'MACHINE LEARNING',title:'Vehicle risk model',icon:'chart',body:
+  T(1446,Y2+170+84,'Good collateral? Example F-150:','sm bd')+
+  T(1446,Y2+170+104,'Resale 27,800 · Recovery 22,900','xs')+T(1446,Y2+170+120,'Expected days to sell 38','xs')+
+  T(1446,Y2+170+138,'Liquidity score · Vehicle risk: LOW','xs bd','style="fill:var(--route)"')+T(1446,Y2+170+154,'CAD, illustrative','xs mu')});
+s+=`<circle cx="1580" cy="${Y2+165}" r="12" style="fill:var(--ink)"/>`+T(1580,Y2+171,'+','sm bd','text-anchor="middle" style="fill:var(--paper)"');
+
+s+=node({x:1060,y:Y2,w:320,h:330,l:'ml',n:8,tag:'ML + RULES, AUDITABLE',title:'Transaction risk engine',icon:'coin',body:
+  `<rect x="1074" y="${Y2+72}" width="292" height="40" rx="6" style="fill:var(--cbg)"/>`+T(1220,Y2+90,'Dealer risk + Vehicle risk + credit room','xs bd','text-anchor="middle" style="fill:var(--c)"')+T(1220,Y2+105,'+ import status + landed economics','xs bd','text-anchor="middle" style="fill:var(--c)"')+
+  lines(1076,Y2+138,['LTV = amount financed / vehicle value','Max advance rate, e.g. 90% of value','Example: value 25,000 → ACV funds','22,500, dealer contributes 1,500'],21,'xs')+
+  `<rect x="1074" y="${Y2+232}" width="292" height="32" rx="6" style="fill:var(--c)"/>`+T(1220,Y2+254,'Decision = rules + ML. Never the LLM.','ln bd','text-anchor="middle" style="fill:var(--paper)"')+
+  T(1076,Y2+286,'Funding 24,000 · PD 2.8% · LTV 77%','xs bd')+T(1076,Y2+303,'Recovery 25,000 · Margin 7,000 · 37 days','xs mu')+T(1076,Y2+321,'Reason codes on every case (CAD, illustrative)','xs mu')});
+s+=edge('M1430 480 H1405 V565 H1382')+edge('M1430 650 H1405 V565 H1382');
+
+s+=`<g class="clk" data-step="9" tabindex="0" role="button" aria-label="Explain step 9: Lending decision" style="--c:var(--decide);--cbg:var(--decide-bg)"><polygon points="930,495 1015,565 930,635 845,565" style="fill:var(--decide-bg);stroke:var(--ink);stroke-width:3" class="box"/>
+ ${T(930,562,'Floorplan','ln bd','text-anchor="middle"')}${T(930,581,'decision','ln bd','text-anchor="middle"')}
+ <circle class="numc" cx="860" cy="508" r="13" style="fill:var(--ink)"/><text class="numt" x="860" y="513" text-anchor="middle">9</text></g>`;
+s+=edge('M1060 565 H1017');
+const chip=(y,h,l,head,rows)=>`<g style="${cv(l)}"><rect class="box" x="400" y="${y}" width="400" height="${h}" rx="10" style="fill:var(--cbg)"/>${T(414,y+25,head,'ln bd','style="fill:var(--c)"')}${rows}</g>`;
+s+=chip(400,105,'route','APPROVE FLOORPLAN',lines(414,448,['✓ dealer PD within policy   ✓ credit available','✓ import eligibility passed   ✓ margin positive','✓ LTV within policy   ✓ recovery and time-to-sale OK'],19,'xs'));
+s+=chip(515,100,'human','MANUAL REVIEW',lines(414,562,['⚠ utilization above 85% · rebuilt title','⚠ value uncertainty · margin below preferred','⚠ dealer financials inconsistent'],17,'xs')+`<text class="xs bd" x="414" y="611" style="fill:var(--human)">→ A human underwriter decides</text>`);
+s+=chip(625,70,'fail','DECLINE',lines(414,670,['✗ import ineligible · credit line exhausted','✗ dealer PD above threshold · negative economics · fraud flag'],17,'xs'));
+s+=edge('M845 565 H802')+edge('M845 565 H822 V452 H802','ok')+edge('M845 565 H822 V660 H802','no');
+
+s+=node({x:30,y:Y2,w:320,h:290,l:'route',n:10,tag:'OUTCOME',title:'Fund, ship, sell, repay',icon:'globe' in ICONS?'bank':'bank',body:
+  ['ACV Capital funds the vehicle','Transport and import','Dealer inventory','Dealer sells the vehicle','Floorplan repaid, credit restored'].map((t,i)=>`<circle cx="${52}" cy="${Y2+92+i*40}" r="11" style="fill:var(--c)"/>${T(52,Y2+97+i*40,i+1,'xs bd','text-anchor="middle" style="fill:var(--paper)"')}${T(72,Y2+97+i*40,t,'ln')}${i<4?`<line x1="52" y1="${Y2+104+i*40}" x2="52" y2="${Y2+121+i*40}" style="stroke:var(--c);stroke-width:2"/>`:''}`).join('')+
+  T(46,Y2+284,'Canada or Mexico dealer','sm bd','style="fill:var(--c)"')});
+s+=edge('M400 452 H352','ok')+T(376,442,'YES','elbl','text-anchor="middle" style="fill:var(--route)"');
+
+/* ---------- row 3: flywheel + takeaway + legend ---------- */
+s+=edge('M190 690 V752');
+const FLY=['More dealer purchasing power','+ More ACV transactions','+ More transport volume','+ More finance revenue','+ More repayment and vehicle data','+ Better AI risk models'];
+s+=`<g class="clk" data-step="11" tabindex="0" role="button" aria-label="Explain step 11: Flywheel" style="${cv('route')}"><rect class="box" x="30" y="754" width="1700" height="112" rx="12"/>
+ <circle class="numc" cx="54" cy="778" r="13"/><text class="numt" x="54" y="783" text-anchor="middle">11</text>${T(76,785,'New ACV revenue flywheel','flybig','style="fill:var(--c)"')}
+ ${FLY.map((t,i)=>`<rect x="${46+i*277}" y="798" width="262" height="28" rx="6" class="chipbox" style="fill:var(--cbg)"/>${T(177+i*277,818,t,'xs bd','text-anchor="middle"')}`).join('')}
+ ${T(880,853,'More capital deployed intelligently → more dealer purchasing power','ln bd','text-anchor="middle"')}</g>`;
+s+=`<g><rect x="30" y="880" width="1700" height="92" rx="12" style="fill:var(--ink)"/>
+ ${T(54,910,'Three questions decide every deal:  Is the vehicle legally importable?  Is it economically attractive?  Is the dealer creditworthy?','flybig','style="fill:var(--paper)"')}
+ ${T(54,940,'Rather than becoming a consumer auto lender in Canada and Mexico, ACV extends its existing dealer floorplan model internationally and uses AI','ln','style="fill:var(--paper)"')}
+ ${T(54,960,'to decide which dealers and which U.S. vehicles get capital. Traditional lenders understand the borrower. ACV understands the borrower and the collateral.','ln','style="fill:var(--paper)"')}</g>`;
+const LEG=[['rules','Rules engine','Import eligibility, advance rates, hard limits'],['ml','Machine learning','Dealer PD, resale value, recovery, transaction risk'],['llm','LLM / document AI','Dealer document extraction and summaries'],['human','Human review','Borderline dealers, unusual titles, exceptions']];
+s+=LEG.map(([l,n,d],i)=>`<g style="${cv(l)}"><rect x="${30+i*428}" y="988" width="16" height="16" rx="3" style="fill:var(--c)"/>${T(54+i*428,1001,n,'sm bd')}${T(54+i*428,1020,d,'xs mu')}</g>`).join('');
+s+=T(30,1052,'Illustrative demo with synthetic data. Eligibility rules, figures and thresholds are placeholders, not legal, credit or import advice.','footnote');
+$('g').innerHTML=s;
+initExtras();
+try{if(/^(localhost|127\.0\.0\.1)$/.test(location.hostname))$('links').innerHTML='<a href="/">Routing demo</a><a href="/static/journey3d.html">3D journey</a>'}catch(e){}
+
+/* ---------- explain cards, executive view, toggle ---------- */
+const EXPLAIN={
+ 1:{l:'capture',tag:'Data',t:'ACV U.S. inventory',what:'A U.S. vehicle that ACV has already scanned and routed toward the export path. ACV knows its VIN, mileage, condition report, auction value and expected resale value.',why:'Every later question, from legality to economics to collateral value, starts from trusted facts about the car. ACV already owns those facts.',ex:'A 2018 pickup with a Viper condition report, 98,000 miles and strong export demand.'},
+ 2:{l:'rules',tag:'Rules engine, not ML',t:'Import eligibility engine',what:'Fixed, auditable rules decide whether the vehicle can legally be imported into Canada or Mexico. Canada looks at RIV admissibility, recalls, compliance and title status. Mexico looks at model year, VIN origin, import route, title and theft status. The result is ELIGIBLE, INELIGIBLE, MANUAL REVIEW or ELIGIBLE BUT NOT ECONOMIC.',why:'Legality and economics are separate questions. Machine learning should never guess at import law, and the financing button is disabled for ineligible cars.',ex:'A 2023 Civic is ineligible in Mexico because the model year does not meet the configured import route. A rebuilt-title Tacoma goes to manual review.'},
+ 3:{l:'rules',tag:'Rules + ML',t:'Landed cost and local resale value',what:'Rules add purchase price, transport, duty, tax and compliance to get the landed cost. A vehicle model predicts what the car will resell for locally. The gap is the expected margin.',why:'A car can be legal to import and still be a bad deal. Eligible but not economic vehicles do not get floorplan financing.',ex:'Landed cost CAD 21,400, predicted resale CAD 27,800, expected margin CAD 6,400, so it is economically attractive. A truck with landed cost 39,200 and resale 36,500 is not.'},
+ 4:{l:'llm',tag:'LLM / Document AI',t:'LLM reads dealer documents',what:'The dealer uploads its income statement, balance sheet, bank statements, registration and owner guarantee. The LLM extracts the numbers into structured fields, normalizes them, compares documents for consistency and writes an underwriter summary.',why:'Reading financial documents by hand is slow. The LLM does the reading and summarizing, but the credit decision stays with rules and ML so it remains auditable.',ex:'Extracted: revenue CAD 4.2M, EBITDA 410K, average cash 185K, 47 vehicles a month, existing debt 620K. Summary: stable revenue and strong turnover, main risk is elevated debt.'},
+ 5:{l:'ml',tag:'Rules + ML',t:'Dealer credit line',what:'A revolving inventory credit line is recommended from revenue, cash flow, inventory turnover, repayment history, existing debt and the dealer\'s default risk. It is capped rather than maximized, and the dashboard shows utilization and available credit.',why:'Floorplan lending is about the dealership, not a consumer. Right-sizing the line limits exposure while still giving good dealers purchasing power.',ex:'Toronto Auto Group: recommended line CAD 650,000, CAD 410,000 used, CAD 240,000 available.'},
+ 6:{l:'ml',tag:'Machine learning',t:'Dealer risk model',what:'A gradient-boosted decision tree model predicts the probability that the dealer defaults, and assigns a risk band. SHAP shows which factors lowered and raised the risk.',why:'Dealer behavior is ACV\'s data advantage: purchase history, repayment history and inventory turnover. Explanations make the score auditable.',ex:'PD 2.8%, risk band Low. Lower risk: fast inventory turnover, healthy bank balance, no delinquencies. Higher risk: slow days to repay.'},
+ 7:{l:'ml',tag:'Machine learning',t:'Vehicle risk model',what:'In parallel, models estimate whether this specific vehicle is good collateral: predicted resale value, recovery value if the loan goes bad, expected days to sell and a liquidity score.',why:'The collateral half of the picture. Most lenders cannot see condition, auction pricing, transport and remarketing data. ACV can.',ex:'Resale CAD 27,800, recovery CAD 22,900, about 38 days to sell, vehicle risk LOW.'},
+ 8:{l:'ml',tag:'ML + rules',t:'Transaction risk engine',what:'Dealer risk, vehicle risk, credit-line utilization, import status and landed economics are combined. Rules set the maximum advance rate and LTV limits. LTV is the amount financed divided by vehicle value.',why:'A good dealer can still ask to fund a bad car, and a good car can be requested by a stretched dealer. The decision must weigh both together.',ex:'Funding needed CAD 24,000 against a vehicle worth CAD 31,000 gives LTV 77%. With a 90% advance rate on a CAD 25,000 vehicle, ACV funds 22,500 and the dealer adds 1,500.'},
+ 9:{l:'decide',tag:'Decision',t:'Floorplan decision',what:'Rules plus ML produce APPROVE, MANUAL REVIEW or DECLINE with reason codes. Approvals list what passed, reviews list what needs a person, and declines list what failed. The LLM never makes this call.',why:'Easy cases move in minutes and people focus on the exceptions that need judgment, with a clear audit trail.',ex:'Approve: PD within policy, credit available, import passed, margin positive. Review: dealer utilization above 85% or a rebuilt title. Decline: import ineligible or credit line exhausted.'},
+ 10:{l:'route',tag:'Outcome',t:'Fund, ship, sell, repay',what:'ACV Capital funds the vehicle, it is transported and imported, it sits in the dealer\'s inventory, the dealer sells it and the floorplan is repaid, which restores available credit.',why:'This is the existing floorplan business extended across the border. Repayment timing and sale price become new training data.',ex:'ACV Capital pays CAD 22,500, the truck arrives in Toronto, sells in about 38 days, and the line is repaid.'},
+ 11:{l:'route',tag:'Outcome',t:'Revenue flywheel',what:'More dealer purchasing power brings more ACV transactions, more transport volume and more finance revenue. Each deal adds repayment and vehicle data that improves the risk models.',why:'Better models let ACV deploy capital more intelligently, which gives good dealers more purchasing power and restarts the loop.',ex:'A dealer that repays quickly earns a larger line, buys more U.S. vehicles through ACV and generates more data for the next decision.'}
+};
+let lastFocus=null;
+function openExplain(n){const e=EXPLAIN[n];if(!e)return;lastFocus=document.activeElement;
+  $('mcard').setAttribute('style',cv(e.l));
+  $('mcard').innerHTML=`<div class="mtop"><span class="mbadge">Step ${n} · ${e.tag}</span><button type="button" class="mclose" id="mclose">Close</button></div><h2 id="mtitle">${e.t}</h2>
+   <div class="msec"><b>What happens</b><p>${e.what}</p></div><div class="msec"><b>Why it matters</b><p>${e.why}</p></div><div class="msec ex"><b>Simple example</b><p>${e.ex}</p></div>`;
+  $('modal').hidden=false;$('mclose').focus();$('mclose').onclick=closeExplain}
+function closeExplain(){$('modal').hidden=true;if(lastFocus&&lastFocus.focus)lastFocus.focus()}
+
+function buildExec(){
+  const Y=140,H=312,W=224,X=i=>55+i*260;
+  const enode=({i,l,n,step,tag,title,ls,icon,big})=>{const x=X(i);
+    return `<g class="clk" data-step="${step}" tabindex="0" role="button" aria-label="Explain step ${step}: ${title.join(' ')}" style="${cv(l)}"><rect class="box" x="${x}" y="${Y}" width="${W}" height="${H}" rx="14" style="${big?'stroke-width:5':''}"/>
+     <path class="band" d="M${x+1.25} ${Y+64} V${Y+14} a12 12 0 0 1 12 -12.75 H${x+W-13.25} a12 12 0 0 1 12 12.75 V${Y+64}z"/>
+     <circle class="numc" cx="${x+26}" cy="${Y+24}" r="14"/><text class="numt" x="${x+26}" y="${Y+29}" text-anchor="middle">${n}</text>${T(x+48,Y+29,tag,'tag')}
+     <g transform="translate(${x+W-60},${Y+14}) scale(1.1)">${ICONS[icon](0,0)}</g>
+     ${title.map((t,k)=>T(x+16,Y+104+k*33,t,'xttl')).join('')}
+     ${ls.map((t,k)=>T(x+16,Y+104+title.length*33+14+k*25,t,'xln'+(k===ls.length-1&&big?' bd':''))).join('')}</g>`};
+  let e='';
+  e+=enode({i:0,l:'capture',n:1,step:1,tag:'DATA',title:['ACV U.S.','inventory'],ls:['Viper condition report','VIN and mileage','Auction value'],icon:'car'});
+  e+=enode({i:1,l:'rules',n:2,step:2,tag:'RULES, NOT ML',title:['Is it legally','importable?'],ls:['Canada and Mexico','4 possible outcomes','Button off if ineligible'],icon:'gate'});
+  e+=enode({i:2,l:'rules',n:3,step:3,tag:'RULES + ML',title:['Is it worth','importing?'],ls:['Landed cost vs','predicted resale','= expected margin'],icon:'calc'});
+  e+=enode({i:3,l:'ml',n:4,step:6,tag:'LLM + ML + RULES',title:['Is the dealer','creditworthy?'],ls:['LLM reads documents','ML predicts default','Rules cap the line'],icon:'person',big:true});
+  e+=enode({i:4,l:'ml',n:5,step:7,tag:'MACHINE LEARNING',title:['Is the car','good collateral?'],ls:['Resale and recovery','Days to sell','Vehicle risk band'],icon:'chart',big:true});
+  e+=enode({i:5,l:'decide',n:6,step:9,tag:'DECISION',title:['Approve,','review or','decline'],ls:['Rules + ML decide','The LLM never does','People take exceptions'],icon:'gate'});
+  e+=enode({i:6,l:'route',n:7,step:10,tag:'OUTCOME',title:['Fund, ship,','sell, repay'],ls:['ACV Capital funds','Dealer sells the car','Credit line restored'],icon:'bank'});
+  for(let i=0;i<6;i++)e+=edge(`M${X(i)+W} ${Y+H/2} H${X(i+1)-2}`);
+  e+=['route','human','fail'].map((c,k)=>`<circle cx="${X(5)+30+k*26}" cy="${Y+H-22}" r="8" style="fill:var(--${c})"/>`).join('');
+  e+=`<g class="clk" data-step="11" tabindex="0" role="button" aria-label="Explain step 11: Revenue flywheel" style="${cv('route')}"><rect class="box" x="55" y="484" width="1784" height="124" rx="14"/>
+   <circle class="numc" cx="82" cy="512" r="14"/><text class="numt" x="82" y="517" text-anchor="middle">8</text>${T(106,520,'New ACV revenue flywheel','xbig','style="font-size:32px;fill:var(--c)"')}
+   ${['Dealer buying power','More ACV transactions','More transport volume','More finance revenue','More repayment data','Better AI risk models'].map((t,i)=>`<rect class="chipbox" x="${75+i*292}" y="538" width="270" height="34" rx="7" style="fill:var(--cbg)"/>${T(210+i*292,562,(i?'→ ':'')+t,'ln bd','text-anchor="middle"')}`).join('')}
+   ${T(947,596,'More capital deployed intelligently','sm bd mu','text-anchor="middle"')}</g>`;
+  e+=edge(`M${X(6)+W/2} ${Y+H} V482`);
+  e+=`<rect x="55" y="640" width="1784" height="200" rx="14" style="fill:var(--ink)"/>
+   ${T(947,694,'Three questions decide every deal','xbig','text-anchor="middle" style="font-size:34px;fill:var(--paper)"')}
+   ${T(947,760,'Importable?  +  Attractive?  +  Creditworthy dealer?','xbig','text-anchor="middle" style="font-size:56px;fill:var(--paper)"')}
+   ${T(947,806,'ACV extends its existing dealer floorplan model to Canada and Mexico and understands both the dealer and the collateral.','ln','text-anchor="middle" style="font-size:19px;fill:var(--paper)"')}`;
+  e+=LEG.map(([l,n,d],i)=>`<g style="${cv(l)}"><rect x="${55+i*446}" y="880" width="18" height="18" rx="3" style="fill:var(--c)"/>${T(82+i*446,895,n,'ln bd')}${T(82+i*446,918,d,'sm mu')}</g>`).join('');
+  e+=T(55,1000,'Illustrative demo with synthetic data. Eligibility rules, figures and thresholds are placeholders. Click any box for a plain-English explanation.','footnote');
+  $('ge').innerHTML=e}
+function setView(v){const exec=v==='exec';$('exec').toggleAttribute('hidden',!exec);$('flow').toggleAttribute('hidden',exec);
+  $('vExec').setAttribute('aria-pressed',String(exec));$('vFull').setAttribute('aria-pressed',String(!exec))}
+function initExtras(){buildExec();setView('exec');
+  $('vExec').onclick=()=>setView('exec');$('vFull').onclick=()=>setView('full');
+  const st=document.querySelector('.stage');
+  st.addEventListener('click',ev=>{const g=ev.target.closest('[data-step]');if(g)openExplain(+g.dataset.step)});
+  st.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){const g=ev.target.closest&&ev.target.closest('[data-step]');if(g){ev.preventDefault();openExplain(+g.dataset.step)}}});
+  $('modal').addEventListener('click',ev=>{if(ev.target===$('modal'))closeExplain()});
+  document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&!$('modal').hidden)closeExplain()})}
+</script>

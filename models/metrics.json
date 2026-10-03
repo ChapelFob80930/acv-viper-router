@@ -1,0 +1,100 @@
+{
+  "n_train": 27264,
+  "n_test": 10000,
+  "regression": {
+    "retain": {
+      "r2": 0.99,
+      "mae": 737
+    },
+    "acv": {
+      "r2": 0.531,
+      "mae": 4614
+    },
+    "copart": {
+      "r2": 0.943,
+      "mae": 402
+    }
+  },
+  "p_sell_auc": 0.659,
+  "policy": {
+    "avg_net_per_car": {
+      "always_acv": 8619,
+      "rules_only": 8879,
+      "model_no_human": 10928,
+      "full_system": 10976,
+      "oracle": 11055
+    },
+    "uplift_vs_always_acv_per_car": 2357,
+    "uplift_vs_always_acv_pct": 27.3,
+    "pct_of_oracle_captured": 99.3,
+    "agreement_with_oracle_pct": 89.1,
+    "human_review_rate_pct": 20.1,
+    "gate_skip_rate_pct": 9.5,
+    "route_mix_pct": {
+      "retain": 44.9,
+      "acv": 40.4,
+      "copart": 14.7
+    },
+    "specialist_accuracy_assumed": 0.85,
+    "confidence_threshold": 0.55,
+    "margin_threshold": 0.1,
+    "threshold_sweep": {
+      "0.5": {
+        "review_rate_pct": 19.4,
+        "auto_agreement_pct": 96.0,
+        "reviewed_model_agreement_pct": 66.0
+      },
+      "0.6": {
+        "review_rate_pct": 29.9,
+        "auto_agreement_pct": 98.2,
+        "reviewed_model_agreement_pct": 72.1
+      },
+      "0.7": {
+        "review_rate_pct": 55.5,
+        "auto_agreement_pct": 99.7,
+        "reviewed_model_agreement_pct": 83.2
+      },
+      "0.75": {
+        "review_rate_pct": 65.5,
+        "auto_agreement_pct": 99.8,
+        "reviewed_model_agreement_pct": 85.6
+      },
+      "0.8": {
+        "review_rate_pct": 73.9,
+        "auto_agreement_pct": 99.8,
+        "reviewed_model_agreement_pct": 87.2
+      },
+      "0.9": {
+        "review_rate_pct": 85.6,
+        "auto_agreement_pct": 99.6,
+        "reviewed_model_agreement_pct": 89.0
+      }
+    }
+  },
+  "by_tier": {
+    "1": {
+      "avg_net_system": 10996,
+      "avg_net_always_acv": 8520,
+      "pct_of_oracle": 99.1,
+      "agreement_with_oracle_pct": 87.3
+    },
+    "2": {
+      "avg_net_system": 10931,
+      "avg_net_always_acv": 8566,
+      "pct_of_oracle": 99.3,
+      "agreement_with_oracle_pct": 88.3
+    },
+    "3": {
+      "avg_net_system": 11051,
+      "avg_net_always_acv": 8649,
+      "pct_of_oracle": 99.3,
+      "agreement_with_oracle_pct": 90.5
+    },
+    "4": {
+      "avg_net_system": 10929,
+      "avg_net_always_acv": 8740,
+      "pct_of_oracle": 99.5,
+      "agreement_with_oracle_pct": 90.3
+    }
+  }
+}

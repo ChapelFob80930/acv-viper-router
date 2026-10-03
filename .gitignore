@@ -1,0 +1,10 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.env
+models/*.joblib
+models/specialist_reviews.jsonl
+models/retrain_log.jsonl
+.claude/
+*.log

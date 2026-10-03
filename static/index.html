@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Viper Router Demo</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#14181f;--mute:#5d6676;--line:#e1e5ec;--acc:#1f5eff;--good:#12805c;--warn:#b86e00;--bad:#c4302b;--retain:#7a4cff;--acv:#1f5eff;--copart:#e8590c}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1116;--card:#171b22;--ink:#e8ebf0;--mute:#97a1b2;--line:#2a313c;--acc:#5b8cff;--good:#3ecf9b;--warn:#f0a040;--bad:#ff6b66;--retain:#a68bff;--acv:#5b8cff;--copart:#ff8a4c}}
+*{box-sizing:border-box}body{margin:0;font:15px/1.5 system-ui,Segoe UI,sans-serif;background:var(--bg);color:var(--ink)}
+header{padding:20px 24px 8px}h1{margin:0;font-size:22px}h1 small{font-weight:400;color:var(--mute);font-size:14px;margin-left:8px}
+.banner{margin:8px 24px;padding:8px 12px;border:1px dashed var(--warn);border-radius:8px;color:var(--warn);font-size:13px}
+main{display:grid;grid-template-columns:340px 1fr;gap:16px;padding:8px 24px 40px}
+@media(max-width:900px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+.card h2{margin:0 0 10px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:6px 10px;border-radius:999px;cursor:pointer;font-size:13px}
+.chip.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+label{display:block;font-size:12px;color:var(--mute);margin-top:10px}label b{float:right;color:var(--ink);font-weight:600}
+input[type=range]{width:100%}select,textarea,input[type=number]{width:100%;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px;font:inherit;font-size:13px}
+textarea{height:120px;font-family:ui-monospace,Consolas,monospace;font-size:11.5px}
+.gate{display:flex;gap:8px;align-items:center;font-size:13px;margin-top:6px}
+button.run{width:100%;margin-top:14px;padding:11px;border:0;border-radius:10px;background:var(--acc);color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+.stage{opacity:.25;transition:opacity .4s}.stage.show{opacity:1}
+.stagehead{display:flex;align-items:center;gap:8px;margin-bottom:8px}.num{width:24px;height:24px;border-radius:50%;background:var(--acc);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700}
+.stagehead h3{margin:0;font-size:15px}.tag{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--mute);margin-left:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}th,td{text-align:left;padding:4px 6px;border-bottom:1px solid var(--line)}th{color:var(--mute);font-weight:500}
+.pass{color:var(--good);font-weight:600}.fail{color:var(--bad);font-weight:600}
+.bars .row{display:grid;grid-template-columns:150px 1fr 80px;gap:8px;align-items:center;margin:6px 0;font-size:13px}
+.track{height:16px;background:var(--bg);border-radius:6px;position:relative;overflow:hidden}.fill{height:100%;border-radius:6px;transition:width .8s}
+.row.win .lbl{font-weight:700}
+.shap .row{display:grid;grid-template-columns:190px 1fr 70px;gap:8px;align-items:center;font-size:12.5px;margin:4px 0}
+.shap .track{background:transparent}.zero{position:absolute;left:50%;top:0;bottom:0;border-left:1px solid var(--mute)}
+.decision{font-size:20px;font-weight:700;margin:4px 0}.expl{background:var(--bg);border-radius:8px;padding:10px 12px;font-size:14px;margin-top:8px}
+.review{border:1px solid var(--warn);border-radius:10px;padding:12px;margin-top:10px}.review button{margin-right:6px;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.kpi{background:var(--bg);border-radius:10px;padding:10px}.kpi b{display:block;font-size:22px}.kpi span{font-size:12px;color:var(--mute)}
+.mute{color:var(--mute);font-size:12.5px}.family{margin-top:8px;padding:8px 10px;border-radius:8px;background:rgba(18,128,92,.12);color:var(--good);font-size:13px}
+.skipped{padding:10px;border-radius:8px;background:rgba(196,48,43,.1);color:var(--bad);font-size:14px}
+</style></head><body>
+<header><h1>Viper Router <small>scan → rules → model → route → (financing)</small> <small><a href="/static/journey3d.html" style="color:var(--acc)">3D journey view</a> · <a href="/static/finance.html" style="color:var(--acc)">Cross-border finance flow</a></small></h1></header>
+<div class="banner">DEMO with synthetic data. All prices, fees, export rules, financing terms, the 10% review threshold and service-tier definitions are illustrative placeholders.</div>
+<main>
+<aside>
+  <div class="card"><h2>1 · Pick a vehicle</h2><div class="chips" id="chips"></div>
+    <label>Service package tier <span class="mute">(placeholder history windows)</span><select id="tier"><option value="1">Tier 1 · 12 months</option><option value="2">Tier 2 · 36 months</option><option value="3">Tier 3 · 72 months</option><option value="4">Tier 4 · 120 months</option></select></label>
+  </div>
+  <div class="card"><h2>Viper scan (edit live)</h2><div id="sliders"></div></div>
+  <div class="card"><h2>Hard gates</h2><div id="gates"></div></div>
+  <div class="card"><h2>Service records (messy, as received)</h2><textarea id="svc"></textarea></div>
+  <button class="run" id="run">Run decision ▶</button>
+</aside>
+<section>
+  <div class="card stage" id="s1"><div class="stagehead"><div class="num">1</div><h3>Capture: Viper scan + service history</h3><span class="tag" id="parsemode"></span></div><div id="cap"></div></div>
+  <div class="card stage" id="s2"><div class="stagehead"><div class="num">2</div><h3>Layer 1 · Rules engine (hard gates)</h3></div><div id="gatesOut"></div></div>
+  <div class="card stage" id="s3"><div class="stagehead"><div class="num">3</div><h3>Layer 2 · ML model: net value per route</h3><span class="tag">LightGBM + SHAP</span></div><div id="modelOut"></div></div>
+  <div class="card stage" id="s4"><div class="stagehead"><div class="num">4</div><h3>Decision &amp; Layer 3 · plain-English explanation</h3><span class="tag" id="explmode"></span></div><div id="decOut"></div></div>
+  <div class="card stage" id="s5"><div class="stagehead"><div class="num">5</div><h3>Outcome</h3></div><div id="outOut"></div></div>
+  <div class="card"><h2>Fleet-level results (10,000 held-out synthetic cars)</h2><div id="kpis" class="kpis"></div><div id="tierOut" style="margin-top:12px"></div>
+    <p class="mute">Learning loop: realized sale prices + specialist decisions feed retraining; Evidently-style drift monitoring watches for market shifts. <span id="labels"></span></p></div>
+</section></main>
+<script>
+const $=id=>document.getElementById(id), fmt=n=>(n<0?'-':'')+'$'+Math.abs(Math.round(n)).toLocaleString();
+const COL={retain:'var(--retain)',acv:'var(--acv)',copart:'var(--copart)'}, LBL={retain:'Retain & service',acv:'ACV auction',copart:'Copart'};
+const SL=[['dent_count','Dents',0,25,1],['damage_severity','Damage severity (0-10)',0,10,.1],['broken_parts','Broken parts',0,8,1],['brake_pad_mm','Brake pad (mm)',1,12,.1],['oil_degradation','Oil degradation (0-1)',0,1,.05],['engine_score','Engine score',20,100,1]];
+const GT=[['frame_damage','Frame / structural damage'],['flood','Flood'],['salvage_title','Salvage / branded title'],['airbag_deployed','Airbag deployed'],['odometer_mismatch','Odometer mismatch']];
+let V={},cur=null,last=null;
+async function init(){
+  V=await (await fetch('/api/vehicles')).json();
+  $('chips').innerHTML=Object.entries(V).map(([k,v])=>`<button class="chip" data-k="${k}">${v.label}</button>`).join('');
+  $('chips').onclick=e=>{if(e.target.dataset.k)load(e.target.dataset.k)};
+  $('sliders').innerHTML=SL.map(([k,l,a,b,s])=>`<label>${l}<b id="v_${k}"></b><input type="range" id="sl_${k}" min="${a}" max="${b}" step="${s}"></label>`).join('');
+  $('gates').innerHTML=GT.map(([k,l])=>`<div class="gate"><input type="checkbox" id="g_${k}"><span>${l}</span></div>`).join('');
+  SL.forEach(([k])=>$('sl_'+k).oninput=()=>$('v_'+k).textContent=$('sl_'+k).value);
+  $('run').onclick=run; load('camry'); metrics();
+}
+function load(k){cur=k;const v=V[k];
+  document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.k===k));
+  SL.forEach(([f])=>{$('sl_'+f).value=v.scan[f];$('v_'+f).textContent=v.scan[f]});
+  GT.forEach(([f])=>$('g_'+f).checked=v.gates[f]); $('tier').value=v.service_tier; $('svc').value=v.service_text;
+  document.querySelectorAll('.stage').forEach(s=>s.classList.remove('show'));}
+function collect(){const v=JSON.parse(JSON.stringify(V[cur]));
+  SL.forEach(([f])=>v.scan[f]=parseFloat($('sl_'+f).value)); GT.forEach(([f])=>v.gates[f]=$('g_'+f).checked);
+  v.service_tier=parseInt($('tier').value); v.service_text=$('svc').value; return v;}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function run(){
+  document.querySelectorAll('.stage').forEach(s=>s.classList.remove('show'));
+  const v=collect(); $('run').textContent='Running…';
+  const r=await (await fetch('/api/decide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(v)})).json();
+  last={r,v}; $('run').textContent='Run decision ▶';
+  const c=r.steps.capture, sf=c.service_features;
+  $('parsemode').textContent='LLM parse: '+c.parse_mode;
+  $('cap').innerHTML=`<div class="mute">${c.events.length} events parsed from ${sf.n_events_total} raw records · ${sf.n_events_in_window} fall inside the Tier ${v.service_tier} window (${sf.window_months} mo)</div>
+   <table><tr><th>Date</th><th>Miles</th><th>Part</th><th>Action</th></tr>${c.events.map(e=>`<tr><td>${e.date}</td><td>${e.mileage??'—'}</td><td>${e.part}</td><td>${e.action}</td></tr>`).join('')}</table>
+   <div class="mute" style="margin-top:8px">Derived features: avg oil interval <b>${sf.avg_oil_interval?Math.round(sf.avg_oil_interval).toLocaleString()+' mi':'unknown'}</b> · longest gap <b>${sf.longest_gap_months!=null?sf.longest_gap_months.toFixed(1)+' mo':'unknown'}</b> · repeat repairs <b>${sf.repeat_repairs??'unknown'}</b></div>`;
+  show('s1'); await sleep(700);
+  const g=r.steps.gates;
+  $('gatesOut').innerHTML=`<table>${g.results.map(x=>`<tr><td>${x.label}</td><td class="${x.failed?'fail':'pass'}">${x.failed?'FAIL':'pass'}</td></tr>`).join('')}</table>`+
+    (g.passed?`<p class="mute">All gates passed → continue to the ML model.</p>`:`<div class="skipped" style="margin-top:8px"><b>Gate failed → ML model skipped</b>, straight to the salvage path.<br>${g.note||''}</div>`);
+  show('s2'); await sleep(700);
+  const m=r.steps.model;
+  $('modelOut').innerHTML=m?modelHTML(m,r):`<p class="mute">Skipped — a hard gate failed.</p>`;
+  show('s3'); await sleep(700);
+  $('explmode').textContent='Explainer: '+r.explanation.mode;
+  let rev='';
+  if(r.needs_review) rev=`<div class="review"><b>Human validation:</b> ${m.review_reason} (confidence ${m.confidence_pct}% vs. ${m.confidence_threshold_pct}% required; margin ${m.margin_pct}%). A condition specialist validates the call — and their decision becomes training data.<div style="margin-top:8px">${['retain','acv','copart'].map(k=>`<button data-r="${k}">Choose ${LBL[k]}</button>`).join('')}</div><div id="revres" class="mute" style="margin-top:6px"></div></div>`;
+  $('decOut').innerHTML=`<div class="decision" style="color:${COL[r.route]}">→ ${r.route_label}${r.model_skipped?' <span class="mute">(rules override)</span>':''}</div><div class="expl">${r.explanation.text}</div>${rev}`;
+  document.querySelectorAll('.review button').forEach(b=>b.onclick=()=>review(b.dataset.r));
+  show('s4'); await sleep(700);
+  $('outOut').innerHTML=outcomeHTML(r.steps.outcome,r); show('s5');
+}
+function show(id){$(id).classList.add('show')}
+function modelHTML(m,r){
+  const mx=Math.max(...Object.values(m.nets).map(Math.abs),1);
+  const bars=m.ranked.map(k=>`<div class="row ${k===r.route?'win':''}"><span class="lbl">${LBL[k]}${k===r.route?' ★':''}</span><div class="track"><div class="fill" style="width:${Math.max(2,Math.abs(m.nets[k])/mx*100)}%;background:${COL[k]}"></div></div><b>${fmt(m.nets[k])}</b></div>`).join('');
+  const sm=Math.max(...m.drivers.map(d=>Math.abs(d.shap)),1);
+  const shap=m.drivers.map(d=>{const w=Math.abs(d.shap)/sm*50,pos=d.shap>0;return `<div class="row"><span>${d.label}${d.value!=null?` <span class="mute">(${+d.value.toFixed(1)})</span>`:' <span class="mute">(unknown)</span>'}</span><div class="track"><span class="zero"></span><div class="fill" style="position:absolute;${pos?'left:50%':`right:50%`};width:${w}%;background:${pos?'var(--good)':'var(--bad)'}"></div></div><span>${pos?'+':'−'}${fmt(Math.abs(d.shap))}</span></div>`}).join('');
+  return `<div class="bars">${bars}</div><p class="mute">P(sell at ACV auction) = <b>${Math.round(m.p_sell_acv*100)}%</b> · model confidence <b>${m.confidence_pct}%</b> (human validation below ${m.confidence_threshold_pct}%) · margin between top two routes <b>${m.margin_pct}%</b> (review below ${m.threshold_pct}%)</p>
+    <h2 style="margin-top:14px">Why: SHAP drivers of the winning route's value (vs. an average car)</h2><div class="shap">${shap}</div>`;
+}
+function outcomeHTML(o,r){
+  if(o.kind==='copart'){
+    const ex=o.export;let h=`<b>Copart workflow</b> · expected price ${fmt(o.expected_price)} · <b>${ex.path}</b>${ex.best?' → '+ex.best.destination:''}
+     <table style="margin-top:8px"><tr><th>Destination</th><th>Eligible</th><th>Demand</th><th>Why not</th></tr>${ex.destinations.map(d=>`<tr><td>${d.destination}</td><td class="${d.eligible?'pass':'fail'}">${d.eligible?'yes':'no'}</td><td>${d.demand}</td><td class="mute">${d.reasons.join('; ')}</td></tr>`).join('')}</table>`;
+    h+=`<h2 style="margin-top:14px">Next: dealer floorplan financing (ACV Capital)</h2><p class="mute">${o.floorplan_note||''} The dealer, not a consumer, is the borrower: import eligibility, landed cost, dealer and vehicle risk, then APPROVE, MANUAL REVIEW or DECLINE. <a href="/static/finance.html" style="color:var(--acc)">Open the floorplan flow</a>.</p>`;
+    return h+`<div class="family">${o.family_note}</div>`;
+  }
+  if(o.kind==='retain') return `${o.text} Estimated repair spend ${fmt(o.repair_estimate)}.`;
+  return `${o.text} Probability of selling: ${Math.round(o.p_sell*100)}%. Auction fee ${fmt(o.platform_fee)}.`;
+}
+async function review(choice){
+  const {r}=last; const res=await (await fetch('/api/review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vin:r.vin,chosen_route:choice,model_route:r.route,nets:r.steps.model.nets})})).json();
+  $('revres').textContent=`Logged: specialist chose ${LBL[choice]}${choice===r.route?' (agrees with model)':' (overrides model)'} · ${res.total_labels} labelled example(s) queued for retraining.`; metrics();
+}
+async function metrics(){
+  const {metrics:m}=await (await fetch('/api/metrics')).json(), p=m.policy, a=p.avg_net_per_car;
+  $('kpis').innerHTML=[[fmt(p.uplift_vs_always_acv_per_car),`avg gain per car vs. sending everything to auction (+${p.uplift_vs_always_acv_pct}%)`],[p.agreement_with_oracle_pct+'%','model picks the truly best route'],[p.human_review_rate_pct+'%','cars needing a specialist'],[p.gate_skip_rate_pct+'%','cars rule-routed to salvage (model skipped)'],[fmt(a.rules_only-a.always_acv),'per car from rules alone'],[`${p.route_mix_pct.retain}/${p.route_mix_pct.acv}/${p.route_mix_pct.copart}`,'route mix % retain / ACV / Copart']].map(([b,s])=>`<div class="kpi"><b>${b}</b><span>${s}</span></div>`).join('');
+  $('tierOut').innerHTML=`<h2>Does deeper service history help? (agreement with best route, by tier)</h2><div class="bars">${[1,2,3,4].map(t=>{const x=m.by_tier[t];return `<div class="row"><span class="lbl">Tier ${t}</span><div class="track"><div class="fill" style="width:${(x.agreement_with_oracle_pct-70)/30*100}%;background:var(--acc)"></div></div><b>${x.agreement_with_oracle_pct}%</b></div>`}).join('')}</div><p class="mute">Synthetic ground truth. Axis starts at 70%.</p>`;
+}
+init();
+</script></body></html>

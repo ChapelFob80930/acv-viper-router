@@ -1,0 +1,165 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body style="margin:0">
+<title>Viper Router Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a two-row snake track of 10 stations with a car driving it; detail panel and automation strip below. */
+:root{
+  --bg:#f3f5f7; --panel:#ffffff; --ink:#10161f; --mute:#59636f; --line:#d9dfe6;
+  --road:#c9d1da; --accent:#0b5fff; --auto:#0f7b5f; --human:#b45f06; --retain:#6b3fd4; --acv:#0b5fff; --copart:#d9480f; --bad:#c2312b;
+  --display:'Archivo',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0c1118; --panel:#151b24; --ink:#e7ebf0; --mute:#93a0b0; --line:#273141; --road:#2b3647;
+  --accent:#6b9bff; --auto:#3ecf9b; --human:#f0a040; --retain:#a98bff; --acv:#6b9bff; --copart:#ff8a4c; --bad:#ff6b66; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1118; --panel:#151b24; --ink:#e7ebf0; --mute:#93a0b0; --line:#273141; --road:#2b3647;
+  --accent:#6b9bff; --auto:#3ecf9b; --human:#f0a040; --retain:#a98bff; --acv:#6b9bff; --copart:#ff8a4c; --bad:#ff6b66; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--display);padding-inline:16px;padding-block:20px 32px}
+.wrap{max-width:1000px;margin:0 auto;display:grid;gap:16px}
+h1{margin:0;font-size:clamp(22px,4vw,30px);font-weight:800;letter-spacing:-.01em;text-wrap:balance}
+.sub{color:var(--mute);margin:4px 0 0;max-width:65ch}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tab,.btn{font:600 14px var(--display);border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 14px;border-radius:8px;cursor:pointer}
+.tab[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:focus-visible,.tab:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.spacer{flex:1}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px;overflow:hidden}
+svg{display:block;width:100%;height:auto}
+.road{fill:none;stroke:var(--road);stroke-width:14;stroke-linecap:round;stroke-linejoin:round}
+.node circle{fill:var(--panel);stroke:var(--line);stroke-width:3;transition:all .3s}
+.node text{fill:var(--mute);font:600 15px var(--mono);text-anchor:middle;dominant-baseline:central}
+.node .lab{font:600 15px var(--display);fill:var(--ink);dominant-baseline:auto}
+.node.done circle{stroke:var(--auto)}
+.node.on circle{fill:var(--accent);stroke:var(--accent)}
+.node.on text.n{fill:#fff}
+.node.skip circle{stroke-dasharray:4 4}
+.car{transition:transform .9s cubic-bezier(.5,0,.2,1)}
+.car .body{fill:var(--ink)}.car .win{fill:var(--bg)}.car .wheel{fill:var(--ink);stroke:var(--panel);stroke-width:2}
+.panel{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px}
+@media(max-width:760px){.panel{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+h2{margin:4px 0 8px;font-size:22px;font-weight:800;text-wrap:balance}
+p{margin:0 0 8px;max-width:65ch}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{font:500 12px var(--mono);padding:3px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg)}
+.kv{display:grid;gap:6px;font-size:14px}
+.kv div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:4px}
+.kv span:last-child{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+.auto{display:inline-flex;gap:6px;align-items:center;font:600 12px var(--mono);padding:4px 10px;border-radius:999px;color:var(--auto);border:1px solid var(--auto)}
+.auto.human{color:var(--human);border-color:var(--human)}
+.routes{display:flex;gap:8px;flex-wrap:wrap}
+.r{flex:1;min-width:110px;padding:10px;border-radius:8px;border:2px solid var(--line);text-align:center;font-weight:600;font-size:13px}
+.r b{display:block;font:500 15px var(--mono);font-variant-numeric:tabular-nums}
+.r.win{border-color:currentColor}
+.r.retain{color:var(--retain)}.r.acv{color:var(--acv)}.r.copart{color:var(--copart)}
+.r span{color:var(--ink)}
+.note{font-size:13px;color:var(--mute);margin-top:6px}
+.family{margin-top:8px;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--auto) 14%,transparent);color:var(--auto);font-size:13px;font-weight:600}
+.dots{display:flex;gap:6px;align-items:center}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--line)}.dot.on{background:var(--accent)}.dot.past{background:var(--auto)}
+.foot{font-size:12px;color:var(--mute)}
+@media(prefers-reduced-motion:reduce){.car{transition:none}}
+</style>
+
+<div class="wrap">
+  <div>
+    <h1>Viper Router: from drive-through to destination, with no manual steps</h1>
+    <p class="sub">A dealer drives a car through the Viper pillars. Everything after that runs by itself. A person only steps in when the top two routes are within 10% of each other.</p>
+  </div>
+  <div class="bar" role="group" aria-label="Vehicle">
+    <button class="tab" data-v="camry" aria-pressed="true">2020 Camry · clean</button>
+    <button class="tab" data-v="f150" aria-pressed="false">2017 F-150 · frame damage</button>
+    <button class="tab" data-v="rogue" aria-pressed="false">2018 Rogue · close call</button>
+    <span class="spacer"></span>
+    <button class="btn" id="play" aria-pressed="false">Auto-play</button>
+    <button class="btn" id="prev">Back</button>
+    <button class="btn primary" id="next">Next</button>
+  </div>
+  <div class="stage"><svg id="svg" viewBox="0 0 1000 400" role="img" aria-label="Ten-stage track with a car moving between stations"></svg></div>
+  <div class="panel">
+    <div class="card" id="main"></div>
+    <div class="card" id="side"></div>
+  </div>
+  <div class="dots" id="dots" aria-hidden="true"></div>
+  <div class="foot">Use the left and right arrow keys to move between steps. All prices, fees, export rules and financing terms are illustrative placeholders from the demo's synthetic data.</div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const fmt=n=>'$'+Math.round(n).toLocaleString();
+const STEPS=['Drive-through','Viper scan','LLM structures records','Rules gates','Route model','Confidence check','Explanation','Route','Copart + floorplan','Learning loop'];
+/* station coordinates: top row left to right (1-5), bottom row right to left (6-10) */
+const PT=STEPS.map((_,i)=>i<5?{x:100+i*200,y:110}:{x:900-(i-5)*200,y:290});
+const D={
+ camry:{name:'2020 Toyota Camry',route:'acv',review:false,gate:null,conf:59.4,
+  scan:[['Dents','2'],['Broken parts','0'],['Brake pads','7.5 mm'],['Oil condition','good'],['Engine score','90']],
+  hist:[['Package','Tier 3 · 72 months'],['Records parsed','11 events'],['Avg oil interval','~6,000 mi'],['Repeat repairs','0']],
+  nets:{retain:10161,acv:11694,copart:4758},margin:13.1,
+  why:'Low scan damage and a steady oil-change record keep the auction value high. Local retail demand is soft, which hurts the retain option.'},
+ f150:{name:'2017 Ford F-150',route:'copart',review:false,gate:'Frame / structural damage',
+  scan:[['Dents','11'],['Broken parts','3'],['Brake pads','3.5 mm'],['Oil condition','fair'],['Engine score','62']],
+  hist:[['Package','Tier 2 · 36 months'],['Records parsed','6 events'],['Collision events','2'],['Frame note','bent rail (2026)']],
+  nets:null,margin:null,dest:'Canada',price:7140,
+  why:'Frame damage fails a hard rule, so the model is skipped. Frame-damaged cars can be resold in the US with a branded title, but sending them straight to salvage avoids a failed auction cycle.'},
+ rogue:{name:'2018 Nissan Rogue',route:'retain',review:true,gate:null,conf:52.8,
+  scan:[['Dents','4'],['Broken parts','1'],['Brake pads','4.0 mm'],['Oil condition','fair'],['Engine score','78']],
+  hist:[['Package','Tier 2 · 36 months'],['Records parsed','5 events'],['Avg oil interval','~10,100 mi'],['Repeat repairs','1 (rear brakes)']],
+  nets:{retain:4852,acv:4587,copart:3955},margin:5.5,
+  why:'Retain and ACV are $265 apart and the model is not confident, so the system stops and asks a condition specialist to validate.'}
+};
+const RL={retain:'Retain & service',acv:'ACV auction',copart:'Copart'};
+let vk='camry',step=0,timer=null;
+
+function buildSvg(){
+  const path=PT.map((p,i)=>(i?'L':'M')+p.x+' '+p.y).join(' ');
+  let s=`<path class="road" d="M100 110 L900 110 Q960 110 960 200 Q960 290 900 290 L100 290"/>`;
+  PT.forEach((p,i)=>{s+=`<g class="node" id="n${i}"><circle cx="${p.x}" cy="${p.y}" r="26"/><text class="n" x="${p.x}" y="${p.y}">${i+1}</text><text class="lab" x="${p.x}" y="${p.y+(i<5?-42:56)}">${STEPS[i]}</text></g>`});
+  s+=`<g class="car" id="car"><g transform="translate(-30,-48)"><rect class="body" x="0" y="14" width="60" height="18" rx="6"/><path class="body" d="M12 14 L20 2 H42 L50 14Z"/><path class="win" d="M22 5 H40 L45 13 H17Z"/><circle class="wheel" cx="14" cy="33" r="6"/><circle class="wheel" cx="46" cy="33" r="6"/></g></g>`;
+  $('#svg').innerHTML=s;
+}
+function content(){
+  const d=D[vk], gateFail=!!d.gate, skipModel=gateFail;
+  const kv=a=>`<div class="kv">${a.map(r=>`<div><span>${r[0]}</span><span>${r[1]}</span></div>`).join('')}</div>`;
+  const auto=(t,h)=>`<span class="auto${h?' human':''}">${h?'HUMAN ONLY IF NEEDED':'AUTOMATIC'} · ${t}</span>`;
+  const routes=()=>{if(!d.nets)return `<div class="note">Model skipped: the rules engine already chose the route.</div>`;
+    return `<div class="routes">${['retain','acv','copart'].map(k=>`<div class="r ${k} ${k===d.route?'win':''}"><span>${RL[k]}</span><b>${fmt(d.nets[k])}</b></div>`).join('')}</div>`};
+  const S=[
+   {t:'Dealer drives the car through the Viper pillars',p:'The VIN is read at the pillars. That alone starts the whole process, so nobody enters data or presses a button.',a:auto('triggered by the scan'),side:kv([['Vehicle',d.name],['Trigger','VIN read at drive-through'],['Typing needed','none']])},
+   {t:'Viper scan builds the condition report',p:'The pillars detect dents and broken parts, and check engine condition, brakes and oil. The report is created in seconds.',a:auto('no manual inspection'),side:kv(d.scan)},
+   {t:'The LLM turns messy service records into structured data',p:'History is fetched by VIN as unstructured text, and how far back it goes depends on the service package tier. The LLM outputs structured events (date, mileage, part, action), and the system builds features from them: oil-change interval, longest service gap and repeat repairs.',a:auto('LLM parsing'),side:kv(d.hist)},
+   {t:'Layer 1: hard gates run first',p:skipModel?`Gate failed: ${d.gate}. The ML model is skipped and the car goes straight to the salvage path.`:'Frame damage, flood, salvage title, airbag deployment and odometer mismatch are checked. All five passed, so the car continues to the model.',a:auto('rules engine'),
+     side:kv([['Frame / structural',d.gate?'FAIL':'pass'],['Flood','pass'],['Salvage title','pass'],['Airbag','pass'],['Odometer','pass']])},
+   {t:'Layer 2: the model prices every route',p:skipModel?'Skipped for this car.':'A gradient-boosting model predicts the net value of retaining the car, selling at ACV, or sending it to Copart, plus the chance of selling. SHAP shows which features drove the number.',a:auto(skipModel?'skipped by gate':'LightGBM + SHAP'),side:routes(),skip:skipModel},
+   {t:d.review?'Confidence check: too low, so a human validates':'Confidence check: confident enough',p:skipModel?'No confidence check is needed because a rule decided.':d.review?`Model confidence is ${d.conf}%, below the 55% threshold, and the top two routes are only ${d.margin}% apart. A condition specialist validates the decision, and that decision is saved as training data.`:`Model confidence is ${d.conf}%, above the 55% threshold, and the top route leads by ${d.margin}%. No person is needed.`,a:d.review?auto('human validation, then it continues',true):auto(skipModel?'rule override':'confidence above threshold'),side:kv([['Confidence',d.conf?d.conf+'%':'n/a'],['Threshold','55%'],['Margin',d.margin?d.margin+'%':'n/a'],['Outcome',d.review?'specialist validates':'auto']]),skip:skipModel},
+   {t:'Layer 3: the LLM explains the decision to the dealer',p:d.why,a:auto('LLM writes it, never decides'),side:kv([['Decision made by',skipModel?'rules engine':d.review?'specialist':'model'],['LLM role','explain only'],['Delivery','to the dealer, automatically']])},
+   {t:`Route: ${RL[d.route]}`,p:d.route==='retain'?'The dealer reconditions and retails the car on their own lot.':d.route==='acv'?'The car is listed on the ACV wholesale auction automatically.':'The car is handed to Copart. ACV and Copart are now one group, so this is an internal transfer and the fee stays in-house. No referral or revenue share is needed.',a:auto('listing created for you'),side:routes()+(d.route==='copart'?'<div class="family">Same group: no referral leakage</div>':'')},
+   {t:'Copart: export check, international auction and financing',p:d.route==='copart'?`The export check covers title, each destination's import rules and buyer demand. ${d.dest} qualifies with the highest demand, so the car goes to the international auction. Dealer floorplan financing then runs automatically: import eligibility, landed cost and resale value, dealer and vehicle risk, and a floorplan decision (see the 3D journey and the floorplan flowchart).`:'Not used for this car. This step only runs when the route is Copart.',a:auto(d.route==='copart'?'export check + offers':'not needed'),side:d.route==='copart'?kv([['Dealer market',d.dest],['Expected price',fmt(d.price)],['Financing','ACV Capital floorplan'],['Decision','rules + ML, human on exceptions']])+'<div class="note">The dealer, not a consumer, is the borrower. Terms are placeholders.</div>':kv([['Status','skipped']]),skip:d.route!=='copart'},
+   {t:'Learning loop: outcomes retrain the model on a schedule',p:'Real sale prices, specialist decisions and drift checks flow back automatically. The model retrains and a new version replaces the old one only if it scores better on held-out cars.',a:auto('scheduled retrain'),side:kv([['Inputs','sale prices, specialist labels'],['Drift check','market shift alarm'],['Promotion','only if better'],['Human work','none']])}
+  ];
+  return S[step];
+}
+function render(){
+  const c=content(), d=D[vk];
+  $('#main').innerHTML=`<div class="eyebrow">Step ${step+1} of 10 · ${d.name}</div><h2>${c.t}</h2><p>${c.p}</p>${c.a}`;
+  $('#side').innerHTML=`<div class="eyebrow">${STEPS[step]}</div><div style="margin-top:10px">${c.side}</div>`;
+  PT.forEach((_,i)=>{const n=$('#n'+i);n.classList.toggle('on',i===step);n.classList.toggle('done',i<step);
+    const skipped=(vk==='f150'&&(i===4||i===5))||(vk!=='f150'&&i===8);n.classList.toggle('skip',skipped)});
+  const p=PT[step];$('#car').style.transform=`translate(${p.x}px,${p.y}px)`;
+  $('#dots').innerHTML=PT.map((_,i)=>`<span class="dot ${i===step?'on':i<step?'past':''}"></span>`).join('');
+  $('#prev').disabled=step===0;$('#next').textContent=step===9?'Restart':'Next';
+}
+function go(n){step=(n+10)%10;render()}
+function setPlay(on){clearInterval(timer);$('#play').setAttribute('aria-pressed',on);$('#play').textContent=on?'Pause':'Auto-play';
+  if(on)timer=setInterval(()=>go(step+1),4500)}
+$('#next').onclick=()=>go(step+1);$('#prev').onclick=()=>go(step-1);
+$('#play').onclick=()=>setPlay($('#play').getAttribute('aria-pressed')!=='true');
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{vk=t.dataset.v;document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-pressed',x===t));step=0;render()});
+addEventListener('keydown',e=>{if(e.key==='ArrowRight')go(step+1);if(e.key==='ArrowLeft')go(step-1)});
+buildSvg();render();
+</script>
+
+</body></html>
